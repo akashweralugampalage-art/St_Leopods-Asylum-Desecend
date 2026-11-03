@@ -1,0 +1,157 @@
+# St. Leopold's Asylum: The Abyss of Mind
+
+A first-person psychological horror game that runs entirely in your browser. Explore a decaying psychiatric hospital, recover four missing patient files, scavenge weapons and supplies, and survive whatever is hunting you in the dark. The hallways do not stay where you left them.
+
+Built with plain HTML, JavaScript and [Three.js](https://threejs.org/). There is no build step and no install.
+
+---
+
+## Quick start
+
+1. Download `the_abyss_of_mind_upgraded.html`. Rename it to `index.html` if you plan to host it.
+2. Open it in a modern desktop browser (Chrome, Edge, Firefox or Safari).
+3. Click **ENTER CLINICAL WING**, then click on the game once so it has keyboard focus.
+
+> **Internet connection required.** The game loads Three.js, Tailwind CSS, Font Awesome and Google Fonts from CDNs.
+
+### Hosting on GitHub Pages
+
+1. Rename the game file to `index.html` and push it to your repository.
+2. Go to **Settings → Pages**.
+3. Set the source to your main branch and the root folder, then save.
+4. Your game will be live at `https://<your-username>.github.io/<repo-name>/`.
+
+---
+
+## Objective
+
+Find all **4 patient records** scattered across the hospital wings. Read each one with **E**. Collect the fourth to complete the game.
+
+You start unarmed in the bright clinical wing. The deeper wings are dark, bloodstained and dangerous. Search the desks for weapons and look for batteries, ammo and medical supplies along the way.
+
+---
+
+## Controls
+
+| Action | Keys |
+|---|---|
+| Move | `W` `A` `S` `D` |
+| Sprint | `Shift` (uses stamina) |
+| Look | Arrow keys or `I` `J` `K` `L` (the mouse also works) |
+| Turn around instantly | `X` |
+| Attack | Left mouse click |
+| Flashlight | `F` |
+| Examine or pick up | `E` |
+| Open or close the map | `M` |
+| Equip weapons | `1` Fists, `2` Scalpel, `3` Fire Axe, `4` Handgun (or mouse wheel) |
+| Reload handgun | `R` |
+| Explore Mode (invulnerable) | `G` |
+
+---
+
+## Features
+
+### Realistic hallways
+- Narrow, hospital-scale corridors with a low ceiling.
+- Procedurally generated textures: plaster walls above glossy tile wainscoting, chair rails, baseboards, grime, water stains and blood drips.
+- Ward doors with frames, windows and number plates.
+- Scuffed checker linoleum floors, stained acoustic-tile ceilings and blood pools.
+- Props: gurneys (some with a sheeted body), wheelchairs, bins, rusted pipes, glowing EXIT signs and drifting dust.
+
+### Lighting
+- Dozens of fluorescent fixtures, with only the nearest few casting real light, so it stays smooth.
+- Dead and flickering lights in the dark wings.
+- Random power blackouts.
+- An offset flashlight that lags behind your aim, flickers when the battery runs low, and flashes when you fire the handgun.
+
+### Survival mechanics
+- Health, sprint stamina and a flashlight battery that drains over time.
+- Pickups: batteries, ammo and medical supplies.
+- Three weapons with different range and damage: Scalpel, Fire Axe and Handgun (with reload and reserve ammo).
+- Combat is aim-based and needs line of sight. You cannot hit things behind you or through walls.
+- Rats scatter from you, and some of them bite.
+- A death screen when your health reaches zero.
+
+### The Stalker
+- A pale patient that patrols the hospital using real pathfinding.
+- It sees your flashlight, hears you when you sprint, and slows down when you shine your light on it.
+- It cannot be killed for good. When it falls, it gets back up somewhere else after a while.
+- It sleeps until you have explored a bit, and it gets faster as you recover more records.
+- A heartbeat and a rising drone warn you when it is close.
+
+### A map that will not stay still
+- **Timed changes:** the layout rewrites itself every 15 to 45 seconds, starting after about 40 seconds of play. Walls open and close out of your sight.
+- **Progress changes:** each record you find triggers another change and makes things worse. The lights die, the fog thickens, the bright wing darkens and reddens, and the Stalker speeds up.
+- **Safe by design:** changes never trap you or cut the map into disconnected pieces, and they never remove pickups.
+- **Shifting corridors:** two corridors swap places when you whip around quickly.
+- **Live blueprint map:** the **M** map shows the current layout, but it warns you when it is out of date.
+
+### Accessibility and fairness
+- **Explore Mode (`G`)** makes you invulnerable so you can look around freely.
+- Keyboard-only play: movement, looking and turning around all work without a mouse.
+- If the browser blocks mouse capture (for example in an embedded preview), the game still starts, and on-screen movement buttons appear if no key presses are detected.
+- A red banner shows any script error, which makes bugs easier to report.
+
+---
+
+## Tips
+
+- Shine your flashlight on the Stalker to slow it down.
+- Sprinting is loud. Walk when you think something is nearby.
+- Grab batteries early. A dead flashlight leaves you blind in the dark wings.
+- Do not trust the map for long. Check the **M** screen often.
+- Use `X` to spin around quickly when you are chased.
+
+---
+
+## Tech stack
+
+- **Rendering:** Three.js r128 (WebGL)
+- **UI:** Tailwind CSS (CDN) and Font Awesome icons
+- **Audio:** Web Audio API (all sounds are generated in code)
+- **Textures:** drawn at runtime on HTML canvases, so there are no image assets
+- **Fonts:** Cinzel, Special Elite and Courier Prime from Google Fonts
+
+The whole game is one self-contained HTML file.
+
+---
+
+## Project structure
+
+```
+.
+├── index.html     # The game (the_abyss_of_mind_upgraded.html, renamed)
+└── README.md
+```
+
+---
+
+## Known issues
+
+- Requires a desktop browser with WebGL and a keyboard. Touch controls are not supported.
+- In sandboxed or embedded previews, the browser may block mouse capture or withhold keyboard focus. Open the file in its own tab, or click the game once, to fix this.
+- Performance depends on your GPU. If it feels slow, close other tabs or lower your browser's zoom level.
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. Ideas for future work:
+
+- More wings and enemy types
+- Locked doors and keys
+- Save and restore progress
+- Gamepad support
+- Sound design and music
+
+---
+
+## License
+
+Add your preferred license here, for example MIT. Replace this section with the contents of a `LICENSE` file if you add one.
+
+---
+
+## Credits
+
+Created as an interactive horror experiment using Three.js. Hospital layout, mechanics and audio are all generated in code.
