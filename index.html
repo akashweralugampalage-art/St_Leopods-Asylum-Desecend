@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ST. LEOPOLD PSYCHIATRIC HOSPITAL - RECORD RECOVERY</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome for UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020202;
+            color: #d1d5db;
+            font-family: 'Special Elite', monospace;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #fx-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+            mix-blend-mode: overlay;
+        }
+
+        #vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 6;
+            box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
+        }
+
+        #trauma-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 7;
+            background-color: rgba(255, 255, 255, 0);
+            transition: background-color 0.15s ease-out;
+        }
+
+        .horror-title {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.25em;
+            text-shadow: 0 0 14px rgba(180, 0, 0, 0.8), 0 0 2px rgba(255, 255, 255, 0.6);
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        #crosshair.active {
+            transform: translate(-50%, -50%) scale(2.2);
+            background-color: rgba(220, 38, 38, 0.95);
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.9);
+        }
+
+        /* Viewmodel Container */
+        #weapon-viewport {
+            position: absolute;
+            bottom: -20px;
+            right: 15%;
+            width: 320px;
+            height: 320px;
+            pointer-events: none;
+            z-index: 8;
+            transition: transform 0.08s ease-out;
+            transform-origin: bottom right;
+        }
+
+        .weapon-swing {
+            animation: weaponAttack 0.25s ease-in-out;
+        }
+
+        @keyframes weaponAttack {
+            0% { transform: rotate(0deg) translate(0, 0); }
+            40% { transform: rotate(-35deg) translate(-40px, -30px); }
+            100% { transform: rotate(0deg) translate(0, 0); }
+        }
+
+        .gun-recoil {
+            animation: gunRecoil 0.15s ease-out;
+        }
+
+        @keyframes gunRecoil {
+            0% { transform: translate(0, 0) scale(1); }
+            30% { transform: translate(-10px, -25px) scale(1.05); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Patient File Reader Modal UI */
+        #file-modal {
+            font-family: 'Courier Prime', monospace;
+            background-color: #d8cfbc;
+            color: #1a1815;
+            box-shadow: 0 0 50px rgba(0,0,0,0.95), inset 0 0 40px rgba(0,0,0,0.2);
+        }
+
+        /* Facility Blueprint Map Overlay */
+        #map-overlay {
+            background-color: rgba(10, 15, 25, 0.92);
+            backdrop-filter: blur(8px);
+            font-family: 'Courier Prime', monospace;
+        }
+
+        .map-grid-cell {
+            border: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 red;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 blue;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim-2 2.5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip: rect(10px, 9999px, 30px, 0); }
+            20% { clip: rect(40px, 9999px, 10px, 0); }
+            40% { clip: rect(25px, 9999px, 50px, 0); }
+            60% { clip: rect(70px, 9999px, 20px, 0); }
+            80% { clip: rect(15px, 9999px, 80px, 0); }
+            100% { clip: rect(50px, 9999px, 5px, 0); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(60px, 9999px, 10px, 0); }
+            20% { clip: rect(10px, 9999px, 70px, 0); }
+            40% { clip: rect(80px, 9999px, 30px, 0); }
+            60% { clip: rect(30px, 9999px, 90px, 0); }
+            80% { clip: rect(50px, 9999px, 15px, 0); }
+            100% { clip: rect(20px, 9999px, 60px, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Screen Shader Noise / Grain Overlay -->
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Post-processing Vignette -->
+    <div id="vignette"></div>
+
+    <!-- Screen Flash Effect -->
+    <div id="trauma-flash"></div>
+
+    <!-- Crosshair Reticle -->
+    <div id="crosshair"></div>
+
+    <!-- HUD First-Person Weapon Overlay -->
+    <div id="weapon-viewport">
+        <!-- Bare Hands (Default) -->
+        <svg id="wpn-none" viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] hidden">
+        </svg>
+
+        <!-- Scalpel Viewmodel -->
+        <svg id="wpn-scalpel" viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] hidden">
+            <path d="M 120 180 L 140 100 L 145 30 L 138 20 L 135 35 L 133 95 L 110 180 Z" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+            <path d="M 135 35 L 145 30 L 138 20 Z" fill="#e2e8f0"/>
+            <path d="M 136 38 Q 140 45 137 55 L 142 50 Z" fill="#7f1d1d"/>
+            <line x1="122" y1="140" x2="132" y2="140" stroke="#334155" stroke-width="3"/>
+            <line x1="120" y1="155" x2="130" y2="155" stroke="#334155" stroke-width="3"/>
+        </svg>
+
+        <!-- Fire Axe Viewmodel -->
+        <svg id="wpn-axe" viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] hidden">
+            <!-- Wooden Handle -->
+            <path d="M 100 200 L 140 40 L 150 43 L 110 200 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+            <!-- Axe Head -->
+            <path d="M 135 40 Q 180 20 185 60 Q 150 70 138 75 Z" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+            <!-- Steel Blade Edge -->
+            <path d="M 180 20 Q 192 40 185 60 L 180 55 Z" fill="#cbd5e1"/>
+        </svg>
+
+        <!-- Handgun Viewmodel -->
+        <svg id="wpn-gun" viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] hidden">
+            <!-- Gun Body & Barrel -->
+            <rect x="70" y="80" width="110" height="40" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+            <rect x="150" y="75" width="35" height="12" fill="#090d16"/>
+            <!-- Grip -->
+            <path d="M 80 120 L 60 185 L 90 190 L 110 120 Z" fill="#0f172a"/>
+            <!-- Trigger Guard -->
+            <path d="M 110 120 C 120 145 135 135 130 120 Z" fill="none" stroke="#334155" stroke-width="4"/>
+        </svg>
+    </div>
+
+    <!-- HUD Interface Overlay -->
+    <div id="hud" class="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-6 opacity-0 transition-opacity duration-1000">
+        <!-- Top Header Info -->
+        <div class="flex justify-between items-start">
+            <div class="space-y-1">
+                <div class="text-xs uppercase tracking-widest text-zinc-500 font-bold">ST. LEOPOLD PSYCHIATRIC FACILITY</div>
+                <div class="text-sm font-bold text-zinc-300 tracking-wider">SECTOR: <span id="sector-name" class="text-emerald-400 transition-colors duration-700">CENTRAL CLINICAL ROTUNDA</span></div>
+            </div>
+            
+            <div class="text-right flex gap-6">
+                <div>
+                    <div class="text-xs uppercase tracking-widest text-zinc-500 font-bold"><i class="fa-solid fa-map mr-1 text-cyan-500"></i>Facility Map</div>
+                    <div class="text-sm font-bold text-cyan-400 tracking-widest">[M] OPEN MAP</div>
+                </div>
+                <div>
+                    <div class="text-xs uppercase tracking-widest text-zinc-500 font-bold"><i class="fa-solid fa-virus mr-1 text-red-600"></i>Rats Exterminated</div>
+                    <div class="text-xl font-black text-red-500 tracking-widest" id="rat-counter">0 Killed</div>
+                </div>
+                <div>
+                    <div class="text-xs uppercase tracking-widest text-zinc-500 font-bold"><i class="fa-solid fa-folder-open mr-1 text-amber-500"></i>Patient Records</div>
+                    <div class="text-xl font-black text-amber-500 tracking-widest" id="relic-counter">0 / 4</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Narrative Prompts -->
+        <div id="prompt-container" class="self-center text-center max-w-xl transition-all duration-500 opacity-0 transform translate-y-4">
+            <div id="prompt-text" class="text-base md:text-lg text-zinc-200 font-medium tracking-wide italic bg-black/80 px-6 py-3 rounded border-l-4 border-red-700 shadow-2xl">
+                ...
+            </div>
+        </div>
+
+        <!-- Bottom Status Bar & Weapons HUD -->
+        <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+            <!-- Flashlight & Ammo Status -->
+            <div class="space-y-2">
+                <div class="w-56 bg-black/80 backdrop-blur border border-zinc-800 p-3 rounded">
+                    <div class="flex justify-between items-center mb-1 text-xs text-zinc-400 font-bold tracking-wider">
+                        <span><i class="fa-solid fa-flashlight mr-2 text-yellow-500"></i>FLASHLIGHT [F]</span>
+                        <span id="battery-num" class="text-yellow-500">100%</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-zinc-800">
+                        <div id="battery-bar" class="bg-gradient-to-r from-yellow-700 to-amber-500 h-full w-full transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <div id="ammo-hud" class="hidden w-56 bg-black/80 backdrop-blur border border-zinc-800 p-2.5 rounded text-xs flex justify-between items-center">
+                    <span class="text-zinc-400 font-bold"><i class="fa-solid fa-gun mr-2 text-red-500"></i>HANDGUN AMMO</span>
+                    <span id="ammo-count" class="text-red-400 font-black text-base">12 / 12</span>
+                </div>
+            </div>
+
+            <!-- Context Prompt -->
+            <div class="flex flex-col items-center gap-2">
+                <div id="attack-hint" class="text-xs text-zinc-400 tracking-widest bg-black/70 px-4 py-1.5 rounded border border-zinc-800">
+                    <span id="weapon-equipped-lbl" class="text-amber-500 font-bold">UNARMED</span> — [CLICK] STRIKE
+                </div>
+                <div id="action-prompt" class="hidden bg-amber-950/90 border border-amber-600 text-amber-200 px-5 py-2 rounded text-sm tracking-widest uppercase animate-pulse shadow-lg">
+                    [E] EXAMINE ITEM
+                </div>
+            </div>
+
+            <!-- Weapon Inventory Belt -->
+            <div class="bg-black/80 backdrop-blur border border-zinc-800 p-3 rounded flex gap-3">
+                <div id="slot-1" class="w-12 h-12 border border-amber-500 bg-amber-950/40 rounded flex flex-col justify-center items-center text-xs text-zinc-300">
+                    <span class="font-bold text-[10px]">1</span>
+                    <i class="fa-solid fa-hand-back-fist text-sm"></i>
+                </div>
+                <div id="slot-2" class="w-12 h-12 border border-zinc-800 bg-zinc-950 rounded flex flex-col justify-center items-center text-xs text-zinc-600">
+                    <span class="font-bold text-[10px]">2</span>
+                    <i class="fa-solid fa-scalpel text-sm"></i>
+                </div>
+                <div id="slot-3" class="w-12 h-12 border border-zinc-800 bg-zinc-950 rounded flex flex-col justify-center items-center text-xs text-zinc-600">
+                    <span class="font-bold text-[10px]">3</span>
+                    <i class="fa-solid fa-axe text-sm"></i>
+                </div>
+                <div id="slot-4" class="w-12 h-12 border border-zinc-800 bg-zinc-950 rounded flex flex-col justify-center items-center text-xs text-zinc-600">
+                    <span class="font-bold text-[10px]">4</span>
+                    <i class="fa-solid fa-gun text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facility Architectural Blueprint Map Overlay [M] -->
+    <div id="map-overlay" class="hidden fixed inset-0 z-50 flex flex-col justify-center items-center p-6">
+        <div class="relative w-full max-w-3xl bg-slate-950 border-2 border-cyan-700/60 p-6 rounded shadow-[0_0_50px_rgba(6,182,212,0.15)]">
+            <div class="flex justify-between items-center border-b border-cyan-900/60 pb-3 mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-cyan-400 tracking-widest">FACILITY BLUEPRINT SCHEMATIC</h3>
+                    <p class="text-xs text-zinc-500">ST. LEOPOLD ASYLUM — GROUND SECTOR</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-red-500 font-bold animate-pulse">● SPATIAL ANOMALIES DETECTED</span>
+                </div>
+            </div>
+
+            <!-- Blueprint Map Grid Container -->
+            <div id="map-grid-container" class="relative w-full h-80 bg-slate-900/80 rounded border border-cyan-900/40 p-2 grid grid-cols-11 grid-rows-11 gap-1">
+                <!-- Grid Cells Generated in JS -->
+            </div>
+
+            <div class="mt-4 flex justify-between items-center text-xs text-zinc-400 border-t border-cyan-900/40 pt-3">
+                <div class="flex gap-4">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span> YOU</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-amber-500 rounded-full inline-block"></span> PATIENT RECORD</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-red-600 inline-block"></span> WEAPON</span>
+                </div>
+                <div>PRESS <strong class="text-cyan-400">[M]</strong> OR <strong class="text-cyan-400">[ESC]</strong> TO CLOSE MAP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient File Reader Modal Overlay -->
+    <div id="file-modal-overlay" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex justify-center items-center p-4">
+        <div id="file-modal" class="relative w-full max-w-xl p-8 rounded-sm border-2 border-amber-900/40 transform rotate-1 transition-transform">
+            <div class="flex justify-between items-start border-b-2 border-zinc-800/30 pb-4 mb-4">
+                <div>
+                    <h3 class="text-xs font-black uppercase text-red-900 tracking-widest">ST. LEOPOLD PSYCHIATRIC HOSPITAL</h3>
+                    <div class="text-xs text-zinc-700 font-bold">CONFIDENTIAL MEDICAL EVALUATION</div>
+                </div>
+                <div class="text-right">
+                    <span class="inline-block border-2 border-red-800 text-red-800 text-xs font-black px-2 py-0.5 transform -rotate-6">RESTRICTED</span>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs md:text-sm text-zinc-900 leading-relaxed">
+                <div>
+                    <span class="font-bold">PATIENT ID:</span> <span id="modal-patient-id" class="font-bold text-red-950">SUBJECT #804</span>
+                </div>
+                <div>
+                    <span class="font-bold">DIAGNOSIS:</span> <span id="modal-patient-diagnosis">Severe Dissociative Psychosis</span>
+                </div>
+                <div class="border-t border-zinc-800/20 pt-3 italic bg-amber-100/50 p-3 rounded border-l-2 border-amber-800">
+                    "<span id="modal-patient-text">Patient claims the corridor tile patterns rearrange when lights flicker.</span>"
+                </div>
+                <div class="text-zinc-700 text-xs">
+                    <span class="font-bold">ATTENDING PHYSICIAN NOTE:</span> <span id="modal-patient-note">Recommend immediate heavy sedation.</span>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-zinc-800/20 flex justify-between items-center text-xs text-zinc-600">
+                <span>PRESS <strong class="text-red-900 font-bold">[E]</strong> OR <strong class="text-red-900 font-bold">[ESC]</strong> TO CLOSE FILE</span>
+                <button id="close-modal-btn" class="px-4 py-1.5 bg-zinc-900 text-amber-100 font-bold text-xs hover:bg-red-950 transition-colors">CLOSE RECORD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Overlay Screen -->
+    <div id="start-screen" class="absolute inset-0 z-30 bg-black flex flex-col justify-center items-center p-6 text-center">
+        <div class="max-w-2xl space-y-8">
+            <div class="space-y-3">
+                <h1 class="horror-title text-3xl sm:text-5xl font-black text-red-700 tracking-widest glitch-text" data-text="ST. LEOPOLD'S ASYLUM">ST. LEOPOLD'S ASYLUM</h1>
+                <p class="text-zinc-500 text-xs sm:text-sm tracking-widest uppercase">Non-Linear Hospital Exploration</p>
+            </div>
+
+            <div class="border-t border-b border-zinc-900 py-6 text-zinc-400 text-sm space-y-3 leading-relaxed">
+                <p>You enter the clinical wings of St. Leopold Hospital seeking <span class="text-amber-500 font-bold">4 Missing Patient Files</span>.</p>
+                <p class="text-zinc-300">You begin starkly <strong class="text-red-500">UNARMED</strong> in brightly lit clinical rotundas, but must venture into pitch-black operating sectors. Search desks for weapons (<span class="text-red-400 font-bold">Scalpel, Axe, Handgun</span>), scavenge batteries and medkits, and beware shifting corridors. <span class="text-red-500 font-bold">Something is hunting you</span> &mdash; keep your light on it and stay quiet.</p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-zinc-400 text-left bg-zinc-950/90 p-4 border border-zinc-900 rounded">
+                <div><span class="text-red-600 font-bold block">WASD</span> Walk &middot; <span class="text-red-500">ARROWS / IJKL</span> Look &middot; <span class="text-red-500">X</span> Turn around</div>
+                <div><span class="text-red-600 font-bold block">SHIFT / F</span> Sprint / Flashlight</div>
+                <div><span class="text-red-600 font-bold block">1, 2, 3, 4</span> Equip Weapon</div>
+                <div><span class="text-red-600 font-bold block">M / E / R</span> Map / Inspect / Reload</div>
+            </div>
+
+            <button id="start-btn" class="pointer-events-auto cursor-pointer px-8 py-4 bg-red-950 hover:bg-red-900 border border-red-700 text-red-200 font-bold text-lg tracking-widest uppercase transition-all duration-300 shadow-[0_0_25px_rgba(185,28,28,0.5)] transform hover:-translate-y-0.5">
+                ENTER CLINICAL WING
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Overlay Screen -->
+    <div id="end-screen" class="hidden absolute inset-0 z-40 bg-black/95 flex flex-col justify-center items-center p-6 text-center">
+        <div class="max-w-xl space-y-6">
+            <h2 id="end-title" class="horror-title text-4xl sm:text-5xl font-black text-amber-500 tracking-widest">RECORDS RECOVERED</h2>
+            <p id="end-desc" class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                You gathered all medical patient files and escaped the shifting hospital labyrinth.
+            </p>
+            <button id="restart-btn" class="pointer-events-auto cursor-pointer px-8 py-3 bg-zinc-900 hover:bg-red-950 border border-zinc-700 hover:border-red-600 text-zinc-200 font-bold text-sm tracking-widest uppercase transition-all duration-300">
+                REENTER FACILITY
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================================
+           WEB AUDIO ENGINE (Drones, Gunshots, Axe Swings, Squeaks)
+           ========================================================================= */
+        class HorrorAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.initialized = false;
+                this.droneOsc = null;
+                this.droneGain = null;
+            }
+
+            init() {
+                if (this.initialized) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                
+                this.setupDrone();
+                this.initialized = true;
+            }
+
+            setupDrone() {
+                this.droneOsc = this.ctx.createOscillator();
+                this.droneGain = this.ctx.createGain();
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(120, this.ctx.currentTime);
+
+                this.droneOsc.type = 'sawtooth';
+                this.droneOsc.frequency.setValueAtTime(45, this.ctx.currentTime);
+
+                this.droneGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+
+                this.droneOsc.connect(filter);
+                filter.connect(this.droneGain);
+                this.droneGain.connect(this.ctx.destination);
+                this.droneOsc.start();
+            }
+
+            playScalpelSwing() {
+                if (!this.initialized) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(90, now + 0.1);
+
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.11);
+            }
+
+            playAxeSwing() {
+                if (!this.initialized) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.26);
+            }
+
+            playGunshot() {
+                if (!this.initialized) return;
+                const now = this.ctx.currentTime;
+                
+                const bufferSize = this.ctx.sampleRate * 0.3;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+            }
+
+            playPickupSound() {
+                if (!this.initialized) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            }
+
+            playRatSqueak() {
+                if (!this.initialized) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1400, now);
+                osc.frequency.linearRampToValueAtTime(1900, now + 0.08);
+                osc.frequency.linearRampToValueAtTime(1000, now + 0.14);
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+        }
+
+        /* =========================================================================
+           THREE.JS PSYCHOLOGICAL HOSPITAL SYSTEM
+           ========================================================================= */
+        const audioEngine = new HorrorAudioEngine();
+
+        let scene, camera, renderer, flashlight, flashlightTarget;
+        let ambientLight;
+        let raycaster;
+
+        // Player & Inventory State
+        const player = {
+            position: new THREE.Vector3(0, 1.6, 0),
+            rotation: new THREE.Euler(0, 0, 0, 'YXZ'),
+            battery: 100,
+            flashlightOn: true,
+            filesFound: 0,
+            totalFiles: 4,
+            ratsKilled: 0,
+            hasWon: false,
+            isInspectingFile: false,
+            isMapOpen: false,
+            isAttacking: false,
+            currentWeapon: 0, // 0: Unarmed, 1: Scalpel, 2: Axe, 3: Handgun
+            inventory: {
+                scalpel: false,
+                axe: false,
+                gun: false
+            },
+            ammo: 12
+        };
+
+        const KEY_STATES = {};
+        const MAP_SIZE = 44;
+        const WALL_HEIGHT = 3.2;
+        const COLLIDERS = [];
+        const PATIENT_FILES = [];
+        const WEAPON_PICKUPS = [];
+        const RATS = [];
+        const SHIFTING_WALLS = [];
+
+        // Patient Record Files Data
+        const PATIENT_RECORDS_DATA = [
+            {
+                id: "SUBJECT #804 - ARTHUR V.",
+                diagnosis: "Spatial Perception Disorientation",
+                text: "Subject insists the clinical wing rotunda expands when unobserved. States turning 180 degrees leads to entirely different hospital sectors.",
+                note: "Confined to Ward A."
+            },
+            {
+                id: "SUBJECT #409 - CLARA M.",
+                diagnosis: "Somnambulism & Autophagia",
+                text: "Discovered wandering Ward B corridor during third watch. Attempted to tear hospital doors with bare fingernails. Speaks of a 'Void in Operating Room 3'.",
+                note: "Restraints mandatory."
+            },
+            {
+                id: "SUBJECT #911 - DR. H. KANE",
+                diagnosis: "Paranoid Delusion & Architectural Loop",
+                text: "Former chief psychiatrist. Transformed into patient after claiming hospital geometry mirrors M.C. Escher stairs.",
+                note: "Extremely hostile."
+            },
+            {
+                id: "SUBJECT #000 - UNKNOWN PATIENT",
+                diagnosis: "Total Dissociation",
+                text: "File heavily corroded. 'The hospital map lies. The hallways shift behind your gaze... Find the weapons scattered across the medical desks.'",
+                note: "RECORD TERMINATED."
+            }
+        ];
+
+        // Non-Linear 11x11 Multi-Wing Hospital Grid Layout
+        // 0: Floor, 1: Wall, 2: Patient Record Desk, 3: Scalpel Spawn, 4: Fire Axe Spawn, 5: Handgun Spawn
+        const HOSPITAL_GRID = [
+            [1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,2,0,0,0,3,1],
+            [1,0,1,0,1,0,1,1,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,0,1,0,1,0,1],
+            [1,2,0,0,0,0,1,0,0,4,1],
+            [1,0,1,1,1,0,1,1,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,0,1,0,1],
+            [1,5,0,0,0,2,0,0,0,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        const CELL_SIZE = MAP_SIZE / HOSPITAL_GRID[0].length;
+        let fxCanvas, fxCtx;
+
+        let cleanFloorMat, darkFloorMat, cleanWallMat, darkWallMat;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x07090e, 0.055);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.copy(player.position);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+
+            fxCanvas = document.getElementById('fx-canvas');
+            fxCanvas.width = Math.floor(window.innerWidth / 3);
+            fxCanvas.height = Math.floor(window.innerHeight / 3);
+            fxCtx = fxCanvas.getContext('2d');
+
+            ambientLight = new THREE.AmbientLight(0x334155, 0.45);
+            scene.add(ambientLight);
+
+            flashlightTarget = new THREE.Object3D();
+            scene.add(flashlightTarget);
+
+            flashlight = new THREE.SpotLight(0xfff8e7, 4.5, 22, Math.PI / 5.5, 0.4, 1.4);
+            flashlight.castShadow = true;
+            flashlight.shadow.mapSize.width = 1024;
+            flashlight.shadow.mapSize.height = 1024;
+            flashlight.target = flashlightTarget;
+            scene.add(flashlight);
+
+            createHospitalMaterials();
+            buildHospitalLayout();
+            spawnHospitalRats(14);
+            buildBlueprintMapUI();
+
+            setupEventListeners();
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        /* Create Distinct Hospital Room & Hallway Textures */
+        function createHospitalMaterials() {
+            // Stark White Clinical Tile (Bright Room Sector)
+            const cleanTileCanvas = document.createElement('canvas');
+            cleanTileCanvas.width = 512;
+            cleanTileCanvas.height = 512;
+            const cCtx = cleanTileCanvas.getContext('2d');
+            cCtx.fillStyle = '#f1f5f9';
+            cCtx.fillRect(0, 0, 512, 512);
+            cCtx.strokeStyle = '#cbd5e1';
+            cCtx.lineWidth = 4;
+            for(let i=0; i<512; i+=64) {
+                cCtx.beginPath(); cCtx.moveTo(i,0); cCtx.lineTo(i,512); cCtx.stroke();
+                cCtx.beginPath(); cCtx.moveTo(0,i); cCtx.lineTo(512,i); cCtx.stroke();
+            }
+            const cleanTileTex = new THREE.CanvasTexture(cleanTileCanvas);
+            cleanTileTex.wrapS = THREE.RepeatWrapping; cleanTileTex.wrapT = THREE.RepeatWrapping;
+            cleanTileTex.repeat.set(10, 10);
+            cleanFloorMat = new THREE.MeshStandardMaterial({ map: cleanTileTex, roughness: 0.2, metalness: 0.1 });
+
+            // Rusted/Blood Operating Room Tile (Dark Sector)
+            const darkTileCanvas = document.createElement('canvas');
+            darkTileCanvas.width = 512;
+            darkTileCanvas.height = 512;
+            const dCtx = darkTileCanvas.getContext('2d');
+            dCtx.fillStyle = '#1e293b';
+            dCtx.fillRect(0, 0, 512, 512);
+            for(let i=0; i<30; i++) {
+                dCtx.fillStyle = `rgba(139, 0, 0, ${Math.random()*0.5})`;
+                dCtx.beginPath();
+                dCtx.arc(Math.random()*512, Math.random()*512, Math.random()*50, 0, Math.PI*2);
+                dCtx.fill();
+            }
+            const darkTileTex = new THREE.CanvasTexture(darkTileCanvas);
+            darkTileTex.wrapS = THREE.RepeatWrapping; darkTileTex.wrapT = THREE.RepeatWrapping;
+            darkTileTex.repeat.set(10, 10);
+            darkFloorMat = new THREE.MeshStandardMaterial({ map: darkTileTex, roughness: 0.7 });
+
+            // Wall Materials
+            cleanWallMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
+            darkWallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+        }
+
+        /* Build Non-Linear Hospital Sector Architecture */
+        function buildHospitalLayout() {
+            const halfMapX = (HOSPITAL_GRID[0].length * CELL_SIZE) / 2;
+            const halfMapZ = (HOSPITAL_GRID.length * CELL_SIZE) / 2;
+
+            // Floor & Ceiling Planes
+            const floorGeo = new THREE.PlaneGeometry(HOSPITAL_GRID[0].length * CELL_SIZE, HOSPITAL_GRID.length * CELL_SIZE);
+            const floorMesh = new THREE.Mesh(floorGeo, cleanFloorMat);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.receiveShadow = true;
+            scene.add(floorMesh);
+
+            const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const ceilingMesh = new THREE.Mesh(floorGeo, ceilingMat);
+            ceilingMesh.rotation.x = Math.PI / 2;
+            ceilingMesh.position.y = WALL_HEIGHT;
+            scene.add(ceilingMesh);
+
+            let recordIndex = 0;
+
+            for (let r = 0; r < HOSPITAL_GRID.length; r++) {
+                for (let c = 0; c < HOSPITAL_GRID[0].length; c++) {
+                    const type = HOSPITAL_GRID[r][c];
+                    const x = (c * CELL_SIZE) - halfMapX + (CELL_SIZE / 2);
+                    const z = (r * CELL_SIZE) - halfMapZ + (CELL_SIZE / 2);
+
+                    const isBrightSector = (c < 5 && r < 5);
+
+                    if (type === 1) {
+                        const wallGeo = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
+                        const wall = new THREE.Mesh(wallGeo, isBrightSector ? cleanWallMat : darkWallMat);
+                        wall.position.set(x, WALL_HEIGHT / 2, z);
+                        wall.castShadow = true;
+                        wall.receiveShadow = true;
+                        scene.add(wall);
+
+                        const box = new THREE.Box3().setFromObject(wall);
+                        COLLIDERS.push({ box: box, mesh: wall, row: r, col: c });
+
+                        if (r === 4 && c === 5) SHIFTING_WALLS.push({ mesh: wall, box: box, active: true });
+                    } 
+                    else if (type === 2 && recordIndex < PATIENT_RECORDS_DATA.length) {
+                        createPatientRecordItem(x, z, recordIndex++);
+                    }
+                    else if (type === 3) {
+                        createWeaponPickupItem(x, z, 'scalpel', 'SURGICAL SCALPEL');
+                    }
+                    else if (type === 4) {
+                        createWeaponPickupItem(x, z, 'axe', 'HEAVY FIRE AXE');
+                    }
+                    else if (type === 5) {
+                        createWeaponPickupItem(x, z, 'gun', 'POLICE HANDGUN');
+                    }
+
+                    if (type === 0 && (c % 2 === 0 && r % 2 === 0)) {
+                        createOverheadLight(x, WALL_HEIGHT - 0.2, z, isBrightSector);
+                    }
+                }
+            }
+
+            // Start player in Central Bright Clinical Rotunda (Cell [1,1])
+            player.position.set((-4 * CELL_SIZE), 1.6, (-4 * CELL_SIZE));
+        }
+
+        function createOverheadLight(x, y, z, isBright) {
+            const light = new THREE.PointLight(isBright ? 0xfff8e7 : 0xef4444, isBright ? 1.4 : 0.4, isBright ? 12 : 6);
+            light.position.set(x, y, z);
+            light.castShadow = isBright;
+            scene.add(light);
+
+            const fixtureGeo = new THREE.BoxGeometry(1.5, 0.1, 1.5);
+            const fixtureMat = new THREE.MeshBasicMaterial({ color: isBright ? 0xfef08a : 0x7f1d1d });
+            const fixture = new THREE.Mesh(fixtureGeo, fixtureMat);
+            fixture.position.set(x, y + 0.1, z);
+            scene.add(fixture);
+        }
+
+        function createPatientRecordItem(x, z, index) {
+            const group = new THREE.Group();
+            group.position.set(x, 0.75, z);
+
+            const deskGeo = new THREE.BoxGeometry(1.2, 0.8, 0.8);
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
+            const desk = new THREE.Mesh(deskGeo, deskMat);
+            desk.position.y = -0.4;
+            group.add(desk);
+
+            const fileGeo = new THREE.BoxGeometry(0.4, 0.04, 0.5);
+            const fileMat = new THREE.MeshStandardMaterial({ color: 0xd97706, emissive: 0x78350f, emissiveIntensity: 0.5 });
+            const fileMesh = new THREE.Mesh(fileGeo, fileMat);
+            fileMesh.rotation.y = Math.PI / 4;
+            group.add(fileMesh);
+
+            const fileLight = new THREE.PointLight(0xd97706, 0.8, 2.5);
+            fileLight.position.set(0, 0.2, 0);
+            group.add(fileLight);
+
+            scene.add(group);
+
+            PATIENT_FILES.push({
+                group: group,
+                mesh: fileMesh,
+                light: fileLight,
+                data: PATIENT_RECORDS_DATA[index],
+                collected: false
+            });
+        }
+
+        /* 3D Weapon Pickups Hidden in Rooms */
+        function createWeaponPickupItem(x, z, type, label) {
+            const group = new THREE.Group();
+            group.position.set(x, 0.8, z);
+
+            let mesh;
+            if (type === 'scalpel') {
+                const geo = new THREE.BoxGeometry(0.1, 0.03, 0.4);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.1 });
+                mesh = new THREE.Mesh(geo, mat);
+            } else if (type === 'axe') {
+                const geo = new THREE.BoxGeometry(0.2, 0.1, 0.8);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+                mesh = new THREE.Mesh(geo, mat);
+            } else if (type === 'gun') {
+                const geo = new THREE.BoxGeometry(0.15, 0.25, 0.4);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
+                mesh = new THREE.Mesh(geo, mat);
+            }
+
+            group.add(mesh);
+
+            const light = new THREE.PointLight(0xef4444, 0.9, 2.0);
+            light.position.set(0, 0.2, 0);
+            group.add(light);
+
+            scene.add(group);
+
+            WEAPON_PICKUPS.push({
+                group: group,
+                mesh: mesh,
+                type: type,
+                label: label,
+                collected: false
+            });
+        }
+
+        /* Dynamic Rats Scuttling */
+        function spawnHospitalRats(count) {
+            const halfMapX = (HOSPITAL_GRID[0].length * CELL_SIZE) / 2;
+            const halfMapZ = (HOSPITAL_GRID.length * CELL_SIZE) / 2;
+
+            for (let i = 0; i < count; i++) {
+                const ratGroup = new THREE.Group();
+                const bodyGeo = new THREE.ConeGeometry(0.12, 0.45, 6);
+                bodyGeo.rotateX(Math.PI / 2);
+                const ratMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9 });
+                const body = new THREE.Mesh(bodyGeo, ratMat);
+                ratGroup.add(body);
+
+                let rx = (Math.random() * (HOSPITAL_GRID[0].length - 2) + 1) * CELL_SIZE - halfMapX;
+                let rz = (Math.random() * (HOSPITAL_GRID.length - 2) + 1) * CELL_SIZE - halfMapZ;
+
+                ratGroup.position.set(rx, 0.1, rz);
+                scene.add(ratGroup);
+
+                RATS.push({
+                    group: ratGroup,
+                    velocity: new THREE.Vector3((Math.random() - 0.5) * 2.5, 0, (Math.random() - 0.5) * 2.5),
+                    alive: true,
+                    changeTimer: 0
+                });
+            }
+        }
+
+        function updateRats(delta) {
+            RATS.forEach(rat => {
+                if (!rat.alive) return;
+                rat.changeTimer -= delta;
+                if (rat.changeTimer <= 0) {
+                    rat.velocity.set((Math.random() - 0.5) * 3.0, 0, (Math.random() - 0.5) * 3.0);
+                    rat.changeTimer = 1.5 + Math.random() * 2;
+                    if (Math.random() < 0.15 && camera.position.distanceTo(rat.group.position) < 10) {
+                        audioEngine.playRatSqueak();
+                    }
+                }
+
+                const nextPos = rat.group.position.clone().addScaledVector(rat.velocity, delta);
+                rat.group.position.copy(nextPos);
+                if (rat.velocity.lengthSq() > 0.01) {
+                    rat.group.rotation.y = Math.atan2(rat.velocity.x, rat.velocity.z) + Math.PI;
+                }
+            });
+        }
+
+        /* UI Architectural Blueprint Map Grid Builder */
+        function buildBlueprintMapUI() {
+            const container = document.getElementById('map-grid-container');
+            container.innerHTML = '';
+
+            for (let r = 0; r < 11; r++) {
+                for (let c = 0; c < 11; c++) {
+                    const cell = document.createElement('div');
+                    cell.id = `map-cell-${r}-${c}`;
+                    cell.className = 'map-grid-cell flex justify-center items-center text-[9px] text-cyan-900/60 font-mono transition-colors';
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBlueprintMapUI() {
+            const halfMapX = (HOSPITAL_GRID[0].length * CELL_SIZE) / 2;
+            const halfMapZ = (HOSPITAL_GRID.length * CELL_SIZE) / 2;
+
+            const playerCol = Math.floor((player.position.x + halfMapX) / CELL_SIZE);
+            const playerRow = Math.floor((player.position.z + halfMapZ) / CELL_SIZE);
+
+            for (let r = 0; r < 11; r++) {
+                for (let c = 0; c < 11; c++) {
+                    const cell = document.getElementById(`map-cell-${r}-${c}`);
+                    if (!cell) continue;
+
+                    const type = HOSPITAL_GRID[r][c];
+                    cell.innerHTML = '';
+                    cell.className = 'map-grid-cell flex justify-center items-center text-[9px] transition-colors';
+
+                    if (r === playerRow && c === playerCol) {
+                        cell.className += ' bg-emerald-500/80 text-black font-black';
+                        cell.innerText = 'YOU';
+                    } else if (type === 1) {
+                        cell.className += ' bg-slate-800/80';
+                    } else if (type === 2) {
+                        cell.className += ' bg-amber-500/40 text-amber-200';
+                        cell.innerText = 'REC';
+                    } else if (type >= 3 && type <= 5) {
+                        cell.className += ' bg-red-600/40 text-red-200';
+                        cell.innerText = 'WPN';
+                    } else {
+                        cell.className += ' bg-slate-950/40';
+                    }
+                }
+            }
+        }
+
+        /* =========================================================================
+           CONTROLS & WEAPON SWITCHING
+           ========================================================================= */
+        function setupEventListeners() {
+            document.getElementById('start-btn').addEventListener('click', () => {
+                audioEngine.init();
+                document.body.requestPointerLock();
+            });
+
+            document.getElementById('restart-btn').addEventListener('click', () => {
+                location.reload();
+            });
+
+            document.getElementById('close-modal-btn').addEventListener('click', closePatientFileModal);
+
+            document.addEventListener('pointerlockchange', () => {
+                if (document.pointerLockElement === document.body) {
+                    document.getElementById('start-screen').classList.add('hidden');
+                    document.getElementById('end-screen').classList.add('hidden');
+                    document.getElementById('hud').classList.remove('opacity-0');
+                } else {
+                    if (!player.hasWon && !player.isInspectingFile && !player.isMapOpen) {
+                        document.getElementById('start-screen').classList.remove('hidden');
+                        document.getElementById('hud').classList.add('opacity-0');
+                    }
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement !== document.body || player.isInspectingFile || player.isMapOpen) return;
+
+                player.rotation.y -= e.movementX * 0.0022;
+                player.rotation.x -= e.movementY * 0.0022;
+                player.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.rotation.x));
+            });
+
+            document.addEventListener('mousedown', (e) => {
+                if (document.pointerLockElement === document.body && e.button === 0 && !player.isInspectingFile && !player.isMapOpen) {
+                    performWeaponAttack();
+                }
+            });
+
+            document.addEventListener('wheel', (e) => {
+                if (document.pointerLockElement !== document.body) return;
+                const available = [0];
+                if (player.inventory.scalpel) available.push(1);
+                if (player.inventory.axe) available.push(2);
+                if (player.inventory.gun) available.push(3);
+
+                let currentIdx = available.indexOf(player.currentWeapon);
+                if (e.deltaY > 0) {
+                    currentIdx = (currentIdx + 1) % available.length;
+                } else {
+                    currentIdx = (currentIdx - 1 + available.length) % available.length;
+                }
+                switchWeapon(available[currentIdx]);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                KEY_STATES[e.code] = true;
+
+                if (e.code === 'KeyF' && document.pointerLockElement === document.body) {
+                    player.flashlightOn = !player.flashlightOn;
+                    flashlight.visible = player.flashlightOn;
+                }
+
+                if (e.code === 'KeyM') {
+                    toggleBlueprintMap();
+                }
+
+                if (e.code === 'KeyE') {
+                    if (player.isInspectingFile) closePatientFileModal();
+                    else if (document.pointerLockElement === document.body) interactOrExamine();
+                }
+
+                // Weapon Hotkeys 1, 2, 3, 4
+                if (e.code === 'Digit1') switchWeapon(0);
+                if (e.code === 'Digit2' && player.inventory.scalpel) switchWeapon(1);
+                if (e.code === 'Digit3' && player.inventory.axe) switchWeapon(2);
+                if (e.code === 'Digit4' && player.inventory.gun) switchWeapon(3);
+
+                if (e.code === 'Escape') {
+                    if (player.isInspectingFile) closePatientFileModal();
+                    if (player.isMapOpen) toggleBlueprintMap();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                KEY_STATES[e.code] = false;
+            });
+        }
+
+        function switchWeapon(index) {
+            player.currentWeapon = index;
+            document.querySelectorAll('#weapon-viewport svg').forEach(el => el.classList.add('hidden'));
+
+            const slots = [1, 2, 3, 4];
+            slots.forEach(s => {
+                const slotEl = document.getElementById(`slot-${s}`);
+                slotEl.classList.remove('border-amber-500', 'bg-amber-950/40');
+            });
+
+            const activeSlot = document.getElementById(`slot-${index + 1}`);
+            activeSlot.classList.add('border-amber-500', 'bg-amber-950/40');
+
+            const ammoHud = document.getElementById('ammo-hud');
+            ammoHud.classList.add('hidden');
+
+            const lbl = document.getElementById('weapon-equipped-lbl');
+
+            if (index === 0) {
+                document.getElementById('wpn-none').classList.remove('hidden');
+                lbl.innerText = "UNARMED";
+            } else if (index === 1) {
+                document.getElementById('wpn-scalpel').classList.remove('hidden');
+                lbl.innerText = "SURGICAL SCALPEL";
+            } else if (index === 2) {
+                document.getElementById('wpn-axe').classList.remove('hidden');
+                lbl.innerText = "HEAVY FIRE AXE";
+            } else if (index === 3) {
+                document.getElementById('wpn-gun').classList.remove('hidden');
+                ammoHud.classList.remove('hidden');
+                lbl.innerText = "HANDGUN";
+            }
+        }
+
+        function performWeaponAttack() {
+            if (player.isAttacking) return;
+            player.isAttacking = true;
+
+            const weaponEl = document.getElementById('weapon-viewport');
+
+            if (player.currentWeapon === 0) {
+                weaponEl.classList.add('weapon-swing');
+                setTimeout(() => { weaponEl.classList.remove('weapon-swing'); player.isAttacking = false; }, 250);
+                return;
+            }
+
+            if (player.currentWeapon === 1) {
+                weaponEl.classList.add('weapon-swing');
+                audioEngine.playScalpelSwing();
+                checkAttackHits(2.5);
+                setTimeout(() => { weaponEl.classList.remove('weapon-swing'); player.isAttacking = false; }, 250);
+            } else if (player.currentWeapon === 2) {
+                weaponEl.classList.add('weapon-swing');
+                audioEngine.playAxeSwing();
+                checkAttackHits(3.8);
+                setTimeout(() => { weaponEl.classList.remove('weapon-swing'); player.isAttacking = false; }, 400);
+            } else if (player.currentWeapon === 3) {
+                if (player.ammo <= 0) {
+                    player.isAttacking = false;
+                    return;
+                }
+                player.ammo--;
+                document.getElementById('ammo-count').innerText = `${player.ammo} / 12`;
+                weaponEl.classList.add('gun-recoil');
+                audioEngine.playGunshot();
+                triggerScreenFlash();
+                checkAttackHits(15.0);
+                setTimeout(() => { weaponEl.classList.remove('gun-recoil'); player.isAttacking = false; }, 200);
+            }
+        }
+
+        function checkAttackHits(reachRange) {
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            RATS.forEach(rat => {
+                if (rat.alive) {
+                    const dist = camera.position.distanceTo(rat.group.position);
+                    if (dist < reachRange) {
+                        rat.alive = false;
+                        rat.group.scale.set(1, 0.1, 1);
+                        player.ratsKilled++;
+                        document.getElementById('rat-counter').innerText = `${player.ratsKilled} Killed`;
+                    }
+                }
+            });
+        }
+
+        function interactOrExamine() {
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0 && intersects[0].distance < 3.2) {
+                const hitObj = intersects[0].object;
+
+                PATIENT_FILES.forEach(fileObj => {
+                    if (!fileObj.collected && (hitObj === fileObj.mesh || fileObj.group.children.includes(hitObj))) {
+                        openPatientFileModal(fileObj);
+                    }
+                });
+
+                WEAPON_PICKUPS.forEach(wpnObj => {
+                    if (!wpnObj.collected && (hitObj === wpnObj.mesh || wpnObj.group.children.includes(hitObj))) {
+                        collectWeapon(wpnObj);
+                    }
+                });
+            }
+        }
+
+        function collectWeapon(wpnObj) {
+            wpnObj.collected = true;
+            wpnObj.group.visible = false;
+
+            audioEngine.playPickupSound();
+
+            if (wpnObj.type === 'scalpel') {
+                player.inventory.scalpel = true;
+                switchWeapon(1);
+                showPrompt("EQUIPPED SURGICAL SCALPEL — Press [2] to equip");
+            } else if (wpnObj.type === 'axe') {
+                player.inventory.axe = true;
+                switchWeapon(2);
+                showPrompt("EQUIPPED HEAVY FIRE AXE — Press [3] to equip");
+            } else if (wpnObj.type === 'gun') {
+                player.inventory.gun = true;
+                switchWeapon(3);
+                showPrompt("EQUIPPED POLICE HANDGUN — Press [4] to equip");
+            }
+        }
+
+        function openPatientFileModal(fileObj) {
+            player.isInspectingFile = true;
+            document.exitPointerLock();
+
+            fileObj.collected = true;
+            fileObj.mesh.visible = false;
+            fileObj.light.visible = false;
+
+            player.filesFound++;
+            document.getElementById('relic-counter').innerText = `${player.filesFound} / ${player.totalFiles}`;
+
+            document.getElementById('modal-patient-id').innerText = fileObj.data.id;
+            document.getElementById('modal-patient-diagnosis').innerText = fileObj.data.diagnosis;
+            document.getElementById('modal-patient-text').innerText = fileObj.data.text;
+            document.getElementById('modal-patient-note').innerText = fileObj.data.note;
+
+            document.getElementById('file-modal-overlay').classList.remove('hidden');
+
+            if (player.filesFound >= player.totalFiles) {
+                player.hasWon = true;
+            }
+        }
+
+        function closePatientFileModal() {
+            document.getElementById('file-modal-overlay').classList.add('hidden');
+            player.isInspectingFile = false;
+            document.body.requestPointerLock();
+
+            if (player.hasWon) {
+                document.getElementById('end-screen').classList.remove('hidden');
+                document.getElementById('hud').classList.add('opacity-0');
+            }
+        }
+
+        function toggleBlueprintMap() {
+            player.isMapOpen = !player.isMapOpen;
+            const overlay = document.getElementById('map-overlay');
+
+            if (player.isMapOpen) {
+                document.exitPointerLock();
+                overlay.classList.remove('hidden');
+                updateBlueprintMapUI();
+            } else {
+                overlay.classList.add('hidden');
+                document.body.requestPointerLock();
+            }
+        }
+
+        /* =========================================================================
+           PSYCHOLOGICAL SPATIAL SHIFTING & GAME LOOP
+           ========================================================================= */
+        let lastPlayerYaw = 0;
+
+        function updatePsychologicalShifting() {
+            const currentYaw = player.rotation.y;
+            if (Math.abs(currentYaw - lastPlayerYaw) > Math.PI * 0.85) {
+                SHIFTING_WALLS.forEach(wallObj => {
+                    wallObj.active = !wallObj.active;
+                    wallObj.mesh.position.y = wallObj.active ? WALL_HEIGHT / 2 : -WALL_HEIGHT * 2;
+                });
+                lastPlayerYaw = currentYaw;
+            }
+        }
+
+        function updatePlayerMovement(delta) {
+            if (player.hasWon || player.isInspectingFile || player.isMapOpen) return;
+
+            const speed = KEY_STATES['ShiftLeft'] ? 4.5 : 2.5;
+            const moveVector = new THREE.Vector3();
+
+            if (KEY_STATES['KeyW']) moveVector.z -= 1;
+            if (KEY_STATES['KeyS']) moveVector.z += 1;
+            if (KEY_STATES['KeyA']) moveVector.x -= 1;
+            if (KEY_STATES['KeyD']) moveVector.x += 1;
+
+            moveVector.normalize();
+            const euler = new THREE.Euler(0, player.rotation.y, 0, 'YXZ');
+            moveVector.applyEuler(euler);
+
+            // Altitude Fall-through Protection
+            if (player.position.y < 1.0) {
+                player.position.y = 1.6;
+            }
+
+            // Tight collision radius (0.35m) to prevent sticking in narrow corridors
+            const playerRadius = 0.35;
+            const stepPos = player.position.clone().addScaledVector(moveVector, speed * delta);
+
+            let canMoveX = true;
+            let canMoveZ = true;
+
+            const testBoxX = new THREE.Box3(
+                new THREE.Vector3(stepPos.x - playerRadius, 0.2, player.position.z - playerRadius),
+                new THREE.Vector3(stepPos.x + playerRadius, 2.8, player.position.z + playerRadius)
+            );
+
+            const testBoxZ = new THREE.Box3(
+                new THREE.Vector3(player.position.x - playerRadius, 0.2, stepPos.z - playerRadius),
+                new THREE.Vector3(player.position.x + playerRadius, 2.8, stepPos.z + playerRadius)
+            );
+
+            for (let col of COLLIDERS) {
+                const isShifting = SHIFTING_WALLS.find(w => w.mesh === col.mesh);
+                if (isShifting && !isShifting.active) continue;
+
+                if (col.box.intersectsBox(testBoxX)) canMoveX = false;
+                if (col.box.intersectsBox(testBoxZ)) canMoveZ = false;
+            }
+
+            if (canMoveX) player.position.x = stepPos.x;
+            if (canMoveZ) player.position.z = stepPos.z;
+
+            // Camera Bobbing
+            if (moveVector.lengthSq() > 0) {
+                camera.position.y = player.position.y + Math.sin(Date.now() * 0.009) * 0.03;
+            } else {
+                camera.position.y = player.position.y;
+            }
+
+            camera.position.x = player.position.x;
+            camera.position.z = player.position.z;
+            camera.quaternion.setFromEuler(player.rotation);
+
+            flashlight.position.copy(camera.position);
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            flashlightTarget.position.copy(camera.position).addScaledVector(forward, 5);
+            flashlight.target.position.lerp(flashlightTarget.position, 0.25);
+        }
+
+        function checkInteractions() {
+            if (player.isInspectingFile || player.isMapOpen) return;
+
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            let canInteract = false;
+            let promptMsg = "[E] EXAMINE ITEM";
+
+            if (intersects.length > 0 && intersects[0].distance < 3.2) {
+                const hitObj = intersects[0].object;
+
+                PATIENT_FILES.forEach(fileObj => {
+                    if (!fileObj.collected && (hitObj === fileObj.mesh || fileObj.group.children.includes(hitObj))) {
+                        canInteract = true;
+                        promptMsg = "[E] READ PATIENT RECORD";
+                    }
+                });
+
+                WEAPON_PICKUPS.forEach(wpnObj => {
+                    if (!wpnObj.collected && (hitObj === wpnObj.mesh || wpnObj.group.children.includes(hitObj))) {
+                        canInteract = true;
+                        promptMsg = `[E] PICK UP ${wpnObj.label}`;
+                    }
+                });
+            }
+
+            const prompt = document.getElementById('action-prompt');
+            const reticle = document.getElementById('crosshair');
+
+            if (canInteract) {
+                prompt.innerText = promptMsg;
+                prompt.classList.remove('hidden');
+                reticle.classList.add('active');
+            } else {
+                prompt.classList.add('hidden');
+                reticle.classList.remove('active');
+            }
+        }
+
+        function showPrompt(text) {
+            const container = document.getElementById('prompt-container');
+            const elem = document.getElementById('prompt-text');
+
+            elem.innerText = text;
+            container.classList.remove('opacity-0', 'translate-y-4');
+            container.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                container.classList.remove('opacity-100', 'translate-y-0');
+                container.classList.add('opacity-0', 'translate-y-4');
+            }, 4500);
+        }
+
+        function triggerScreenFlash() {
+            const flash = document.getElementById('trauma-flash');
+            flash.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            setTimeout(() => { flash.style.backgroundColor = 'rgba(255, 255, 255, 0)'; }, 100);
+        }
+
+        function renderCustomShaderNoise() {
+            fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            const imgData = fxCtx.createImageData(fxCanvas.width, fxCanvas.height);
+            const buffer = new Uint32Array(imgData.data.buffer);
+
+            for (let i = 0; i < buffer.length; i += 6) {
+                if (Math.random() < 0.04) {
+                    const alpha = Math.floor(Math.random() * 30);
+                    buffer[i] = (alpha << 24) | 0;
+                }
+            }
+            fxCtx.putImageData(imgData, 0, 0);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            fxCanvas.width = Math.floor(window.innerWidth / 3);
+            fxCanvas.height = Math.floor(window.innerHeight / 3);
+        }
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            updatePlayerMovement(delta);
+            updatePsychologicalShifting();
+            updateRats(delta);
+            checkInteractions();
+
+            PATIENT_FILES.forEach(fileObj => {
+                if (!fileObj.collected) fileObj.mesh.rotation.y += delta * 0.8;
+            });
+
+            WEAPON_PICKUPS.forEach(wpnObj => {
+                if (!wpnObj.collected) wpnObj.mesh.rotation.y += delta * 1.2;
+            });
+
+            renderCustomShaderNoise();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            init();
+            animate();
+        };
+    </script>
+<script>
+/* ===== UPGRADE PACK: realistic hallways, lighting, stalker AI, survival mechanics ===== */
+const HALF=(HOSPITAL_GRID[0].length*CELL_SIZE)/2,N=HOSPITAL_GRID.length;
+const SHIFT_CELLS=[[4,5],[6,5]];
+const G={wallMesh:{},floorSet:new Set(),shift:0,health:100,stamina:100,tired:false,fix:[],pool:[],pick:[],stalker:null,bob:0,prevS:0,roll:0,turn:0,lastYaw:0,shiftCD:10,hurtCD:0,ratCD:0,muzzle:0,reserve:6,hb:0,black:0,nextBlack:40,poolT:0,aim:null,shiftMeshes:[],hudStr:''};
+let T;const S=(f,...a)=>{try{f(...a);}catch(err){if(!G.errShown){G.errShown=1;window.dispatchEvent(new ErrorEvent("error",{message:err.message+" @"+f.name}));}}};
+const $id=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const cellOf=(x,z)=>({c:Math.floor((x+HALF)/CELL_SIZE),r:Math.floor((z+HALF)/CELL_SIZE)});
+const centerOf=(r,c)=>new THREE.Vector3(c*CELL_SIZE-HALF+CELL_SIZE/2,0,r*CELL_SIZE-HALF+CELL_SIZE/2);
+function isWall(r,c){if(r<0||c<0||r>=N||c>=N)return true;if(HOSPITAL_GRID[r][c]===1)return true;const s=SHIFT_CELLS[G.shift];return r===s[0]&&c===s[1];}
+function solidAt(x,z){const k=cellOf(x,z);return isWall(k.r,k.c);}
+function blocked(x,z,rad){
+  for(const dx of[-rad,rad])for(const dz of[-rad,rad])if(solidAt(x+dx,z+dz))return true;
+  for(const f of PATIENT_FILES){const p=f.group.position;if(Math.abs(x-p.x)<0.6+rad&&Math.abs(z-p.z)<0.4+rad)return true;}
+  return false;
+}
+function los(a,b){const d=Math.hypot(b.x-a.x,b.z-a.z),n=Math.ceil(d/0.5);for(let i=1;i<n;i++){const t=i/n;if(solidAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t))return false;}return true;}
+function openCells(){const o=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(HOSPITAL_GRID[r][c]!==1)o.push([r,c]);return o;}
+function findPath(from,to){
+  const key=(r,c)=>r*N+c,q=[[from.r,from.c]],prev=new Map([[key(from.r,from.c),null]]);
+  while(q.length){const[r,c]=q.shift();if(r===to.r&&c===to.c)break;
+    for(const[dr,dc]of[[1,0],[-1,0],[0,1],[0,-1]]){const nr=r+dr,nc=c+dc,k=key(nr,nc);if(isWall(nr,nc)||prev.has(k))continue;prev.set(k,[r,c]);q.push([nr,nc]);}}
+  if(!prev.has(key(to.r,to.c)))return[];
+  const out=[];let cur=[to.r,to.c];while(cur){out.unshift(cur);cur=prev.get(key(cur[0],cur[1]));}return out;
+}
+
+/* ---------- Procedural textures ---------- */
+function tex(w,h,fn,rx,ry){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.anisotropy=8;return t;}
+function grime(x,w,h,n,a){for(let i=0;i<n;i++){x.fillStyle=`rgba(10,8,5,${rnd(0.02,a)})`;x.fillRect(rnd(0,w),rnd(0,h),rnd(1,5),rnd(1,5));}}
+function drips(x,w,h,n,col){for(let i=0;i<n;i++){const len=rnd(h*.1,h*.6),g=x.createLinearGradient(0,0,0,len);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(rnd(0,w),0,rnd(2,9),len);}}
+function wallTex(bright,door){return tex(512,416,(x,w,h)=>{
+  const wain=h*0.36,top=h-wain;
+  x.fillStyle=bright?'#b7c0b2':'#555a50';x.fillRect(0,0,w,h);
+  grime(x,w,top,2500,.12);
+  drips(x,w,h,bright?6:14,bright?'rgba(60,50,30,.25)':'rgba(30,20,10,.5)');
+  if(!bright)drips(x,w,h,4,'rgba(90,0,0,.55)');
+  x.fillStyle=bright?'#7e9a90':'#2c3836';x.fillRect(0,top,w,wain);
+  x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=2;
+  for(let i=0;i<=w;i+=32){x.beginPath();x.moveTo(i,top);x.lineTo(i,h);x.stroke();}
+  for(let j=top;j<=h;j+=32){x.beginPath();x.moveTo(0,j);x.lineTo(w,j);x.stroke();}
+  x.fillStyle=bright?'#d8d4c6':'#6c6a60';x.fillRect(0,top-6,w,8);
+  x.fillStyle='#1d1f1d';x.fillRect(0,h-14,w,14);
+  grime(x,w,h,3000,.2);
+  const g=x.createLinearGradient(0,h-90,0,h);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(20,12,5,.45)');x.fillStyle=g;x.fillRect(0,h-90,w,90);
+  if(door){const dx=door===1?70:door===2?300:180,dw=128,y0=h-276;
+    x.fillStyle='#2a2622';x.fillRect(dx-8,y0-8,dw+16,278);
+    x.fillStyle=bright?'#6b7a74':'#3b3f3a';x.fillRect(dx,y0,dw,270);
+    x.fillStyle='rgba(0,0,0,.3)';x.fillRect(dx+20,y0+170,dw-40,80);
+    x.fillStyle=bright?'#9fb6c0':'#0b0d0e';x.fillRect(dx+34,y0+24,dw-68,70);
+    x.fillStyle='#c9b98a';x.fillRect(dx+dw-24,y0+140,10,22);
+    x.fillStyle='#ddd';x.fillRect(dx+36,y0-34,56,18);x.fillStyle='#222';x.font='bold 13px monospace';x.fillText('WARD '+(10+Math.floor(Math.random()*60)),dx+39,y0-21);
+    grime(x,dw,270,400,.25);}
+});}
+function floorTex(bright){return tex(512,512,(x,w,h)=>{
+  const s=128;for(let i=0;i<4;i++)for(let j=0;j<4;j++){const a=(i+j)%2;x.fillStyle=bright?(a?'#c9cfc8':'#aeb8b0'):(a?'#3a423f':'#2e3533');x.fillRect(i*s,j*s,s,s);}
+  x.strokeStyle='rgba(0,0,0,.5)';x.lineWidth=3;for(let i=0;i<=w;i+=s){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(w,i);x.stroke();}
+  for(let k=0;k<70;k++){x.strokeStyle=`rgba(0,0,0,${rnd(.03,.12)})`;x.lineWidth=rnd(1,4);const px=rnd(0,w),py=rnd(0,h);x.beginPath();x.moveTo(px,py);x.lineTo(px+rnd(-60,60),py+rnd(-20,20));x.stroke();}
+  if(!bright)for(let k=0;k<5;k++){const px=rnd(0,w),py=rnd(0,h),g=x.createRadialGradient(px,py,2,px,py,rnd(20,50));g.addColorStop(0,'rgba(80,0,0,.55)');g.addColorStop(1,'rgba(80,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}
+  grime(x,w,h,1500,.15);
+},2,2);}
+function ceilTex(){return tex(512,512,(x,w,h)=>{x.fillStyle='#8d9088';x.fillRect(0,0,w,h);x.strokeStyle='#3d3f3a';x.lineWidth=4;
+  for(let i=0;i<=w;i+=128){x.beginPath();x.moveTo(i,0);x.lineTo(i,h);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(w,i);x.stroke();}
+  grime(x,w,h,3000,.18);for(let k=0;k<6;k++){const px=rnd(0,w),py=rnd(0,h),g=x.createRadialGradient(px,py,2,px,py,rnd(30,70));g.addColorStop(0,'rgba(70,50,20,.4)');g.addColorStop(1,'rgba(70,50,20,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}
+},2,2);}
+function makeTextures(){
+  const bump=tex(128,128,(x,w,h)=>{const id=x.createImageData(w,h);for(let i=0;i<id.data.length;i+=4){const v=rnd(90,200);id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=255;}x.putImageData(id,0,0);},4,3);
+  const mk=b=>[0,1,2,3].map(d=>new THREE.MeshStandardMaterial({map:wallTex(b,d),bumpMap:bump,bumpScale:1.2,roughness:b?0.8:0.95}));
+  const bl=document.createElement('canvas');bl.width=bl.height=128;const bx=bl.getContext('2d'),bg=bx.createRadialGradient(64,64,4,64,64,62);
+  bg.addColorStop(0,'rgba(70,0,0,.95)');bg.addColorStop(.7,'rgba(50,0,0,.7)');bg.addColorStop(1,'rgba(40,0,0,0)');bx.fillStyle=bg;bx.fillRect(0,0,128,128);
+  return{wallB:mk(true),wallD:mk(false),
+    floorB:new THREE.MeshStandardMaterial({map:floorTex(true),roughness:.3,metalness:.05}),
+    floorD:new THREE.MeshStandardMaterial({map:floorTex(false),roughness:.55}),
+    ceil:new THREE.MeshStandardMaterial({map:ceilTex(),roughness:1}),
+    metal:new THREE.MeshStandardMaterial({color:0x5a6066,metalness:.6,roughness:.5}),
+    blood:new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(bl),transparent:true,depthWrite:false,roughness:.2,polygonOffset:true,polygonOffsetFactor:-1})};
+}
+function createHospitalMaterials(){}
+
+/* ---------- Hallway architecture ---------- */
+function addFixture(r,c,p,bright){
+  const vert=isWall(r,c-1)&&isWall(r,c+1)&&!(isWall(r-1,c)&&isWall(r+1,c));
+  const g=new THREE.Group();g.position.set(p.x,WALL_HEIGHT-0.04,p.z);if(vert)g.rotation.y=Math.PI/2;
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(1.3,0.06,0.3),T.metal));
+  const mat=new THREE.MeshBasicMaterial({color:0xffffff}),tube=new THREE.Mesh(new THREE.BoxGeometry(1.15,0.03,0.2),mat);tube.position.y=-0.04;g.add(tube);scene.add(g);
+  G.fix.push({r,c,grp:g,pos:new THREE.Vector3(p.x,WALL_HEIGHT-0.5,p.z),mat,bright,alive:bright||Math.random()<0.5,flick:bright?Math.random()<0.12:Math.random()<0.5,phase:rnd(0,100),on:true});
+}
+function scatter(r,c,p,bright){
+  const Wl=[isWall(r-1,c),isWall(r+1,c),isWall(r,c-1),isWall(r,c+1)],D=[[0,-1],[0,1],[-1,0],[1,0]],open=Wl.filter(x=>!x).length;
+  if(!bright&&Math.random()<0.25){const d=new THREE.Mesh(new THREE.CircleGeometry(rnd(.5,1.1),20),T.blood);d.rotation.x=-Math.PI/2;d.position.set(p.x+rnd(-1,1),0.012,p.z+rnd(-1,1));scene.add(d);}
+  if(!bright&&Wl[2]&&Wl[3]&&Math.random()<0.6){const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,CELL_SIZE,8),new THREE.MeshStandardMaterial({color:0x5b3a29,roughness:.8,metalness:.4}));pipe.rotation.x=Math.PI/2;pipe.position.set(p.x+1.5,WALL_HEIGHT-.2,p.z);scene.add(pipe);}
+  const wi=Wl.findIndex(x=>x);if(wi<0)return;
+  const d=D[wi],ry=wi<2?0:Math.PI/2,pos=new THREE.Vector3(p.x+d[0]*1.45,0,p.z+d[1]*1.45);
+  if(open===1){const s=new THREE.Mesh(new THREE.BoxGeometry(.5,.16,.04),new THREE.MeshBasicMaterial({color:0x22ff66}));s.position.set(p.x+d[0]*1.97,2.5,p.z+d[1]*1.97);s.rotation.y=ry;scene.add(s);}
+  if(Math.random()>(open===1?0.85:0.16))return;
+  const g=new THREE.Group(),k=Math.random(),M=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.8}),B=(w,h,dd,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,dd),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o;};
+  if(k<.45){B(1.9,.12,.8,M(0xb8b4a6),0,.85,0);B(1.9,.05,.7,T.metal,0,.72,0);
+    for(const sx of[-.9,.9])for(const sz of[-.3,.3])B(.05,.7,.05,T.metal,sx,.35,sz);
+    if(!bright&&Math.random()<.5){const sh=M(0x6e5c52);B(1.4,.2,.5,sh,.1,.99,0);const h=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),sh);h.position.set(-.7,1,0);g.add(h);}}
+  else if(k<.75){B(.45,.05,.45,M(0x222222),0,.5,0);B(.45,.5,.05,M(0x222222),0,.75,-.22);
+    for(const sx of[-.27,.27]){const w=new THREE.Mesh(new THREE.TorusGeometry(.3,.025,6,16),T.metal);w.rotation.y=Math.PI/2;w.position.set(sx,.3,0);g.add(w);}}
+  else{const b=new THREE.Mesh(new THREE.CylinderGeometry(.22,.2,.7,10),T.metal);b.position.y=.35;g.add(b);}
+  g.position.copy(pos);g.rotation.y=ry+rnd(-.1,.1);scene.add(g);
+}
+function buildHospitalLayout(){
+  T=makeTextures();
+  const flat=new THREE.PlaneGeometry(CELL_SIZE,CELL_SIZE),wallGeo=new THREE.BoxGeometry(CELL_SIZE,WALL_HEIGHT,CELL_SIZE);
+  let rec=0;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const type=HOSPITAL_GRID[r][c],p=centerOf(r,c),bright=r<5&&c<5;
+    if(type===1){
+      const hasOpen=[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>{const rr=r+a,cc=c+b;return rr>=0&&cc>=0&&rr<N&&cc<N&&HOSPITAL_GRID[rr][cc]!==1;});
+      if(!hasOpen)continue;
+      const set=bright?T.wallB:T.wallD,w=new THREE.Mesh(wallGeo,Math.random()<.55?set[0]:set[1+Math.floor(Math.random()*3)]);
+      w.position.set(p.x,WALL_HEIGHT/2,p.z);w.castShadow=w.receiveShadow=true;scene.add(w);G.wallMesh[r*N+c]=w;continue;
+    }
+    const f=new THREE.Mesh(flat,bright?T.floorB:T.floorD);f.rotation.x=-Math.PI/2;f.position.set(p.x,0,p.z);f.receiveShadow=true;scene.add(f);G.floorSet.add(r*N+c);
+    const ce=new THREE.Mesh(flat,T.ceil);ce.rotation.x=Math.PI/2;ce.position.set(p.x,WALL_HEIGHT,p.z);scene.add(ce);
+    if(type===2&&rec<PATIENT_RECORDS_DATA.length)createPatientRecordItem(p.x,p.z,rec++);
+    else if(type===3)createWeaponPickupItem(p.x,p.z,'scalpel','SURGICAL SCALPEL');
+    else if(type===4)createWeaponPickupItem(p.x,p.z,'axe','HEAVY FIRE AXE');
+    else if(type===5)createWeaponPickupItem(p.x,p.z,'gun','POLICE HANDGUN');
+    else if(type===0&&!(r===1&&c===1))scatter(r,c,p,bright);
+    if((r+c)%2===0)addFixture(r,c,p,bright);
+  }
+  SHIFT_CELLS.forEach(([r,c],i)=>{const p=centerOf(r,c),w=new THREE.Mesh(wallGeo,T.wallD[0]);w.position.set(p.x,WALL_HEIGHT/2,p.z);w.castShadow=w.receiveShadow=true;w.visible=(i===G.shift);scene.add(w);G.shiftMeshes.push(w);});
+  WEAPON_PICKUPS.forEach(w=>w.group.children.forEach(ch=>{if(ch.isLight)ch.visible=false;else ch.material.emissive.setHex(0x3a0000);}));
+  const s=centerOf(1,1);player.position.set(s.x,1.6,s.z);player.rotation.y=-Math.PI/2;
+}
+
+/* ---------- Rats ---------- */
+function spawnHospitalRats(n){
+  const open=openCells().filter(([r,c])=>Math.hypot(r-1,c-1)>3);
+  for(let i=0;i<n;i++){
+    const[r,c]=open[Math.floor(Math.random()*open.length)],p=centerOf(r,c),g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:0x2a2420,roughness:.9});
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),m);body.scale.set(.8,.7,1.9);body.position.y=.09;g.add(body);
+    const head=new THREE.Mesh(new THREE.ConeGeometry(.07,.2,6),m);head.rotation.x=Math.PI/2;head.position.set(0,.09,-.28);g.add(head);
+    const tail=new THREE.Mesh(new THREE.CylinderGeometry(.01,.015,.35,4),new THREE.MeshStandardMaterial({color:0x7a5a52}));tail.rotation.x=Math.PI/2;tail.position.set(0,.06,.35);g.add(tail);
+    const eye=new THREE.Mesh(new THREE.BoxGeometry(.1,.02,.02),new THREE.MeshBasicMaterial({color:0xff2200}));eye.position.set(0,.13,-.2);g.add(eye);
+    g.position.set(p.x+rnd(-1,1),0,p.z+rnd(-1,1));scene.add(g);
+    RATS.push({group:g,velocity:new THREE.Vector3(),alive:true,changeTimer:0,mean:Math.random()<0.4});
+  }
+}
+function updateRats(dt){
+  const pp=player.position;G.ratCD-=dt;
+  RATS.forEach(rat=>{
+    if(!rat.alive)return;const p=rat.group.position;
+    if(solidAt(p.x,p.z)){const o=openCells(),[r,c]=o[Math.floor(Math.random()*o.length)],q=centerOf(r,c);p.set(q.x,0,q.z);}
+    rat.changeTimer-=dt;const dx=p.x-pp.x,dz=p.z-pp.z,dd=Math.hypot(dx,dz)||1;
+    if(rat.mean&&dd<6&&los(p,pp)){rat.velocity.set(-dx/dd*2.8,0,-dz/dd*2.8);
+      if(dd<.7&&G.ratCD<=0&&G.hurtCD<=0){G.ratCD=1.4;hurt(2);}}
+    else if(!rat.mean&&dd<3.5){rat.velocity.set(dx/dd*3.2,0,dz/dd*3.2);rat.changeTimer=.5;}
+    else if(rat.changeTimer<=0){rat.velocity.set(rnd(-1.5,1.5),0,rnd(-1.5,1.5));rat.changeTimer=rnd(1.5,3.5);if(Math.random()<.15&&dd<10)audioEngine.playRatSqueak();}
+    const nx=p.x+rat.velocity.x*dt,nz=p.z+rat.velocity.z*dt;
+    if(solidAt(nx,nz)){rat.velocity.multiplyScalar(-1);rat.changeTimer=0;}else{p.x=nx;p.z=nz;}
+    if(rat.velocity.lengthSq()>.01)rat.group.rotation.y=Math.atan2(rat.velocity.x,rat.velocity.z)+Math.PI;
+  });
+}
+
+/* ---------- Audio additions ---------- */
+const AP=HorrorAudioEngine.prototype;
+AP.tone=function(type,f0,f1,dur,vol){if(!this.initialized)return;const n=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(f0,n);o.frequency.exponentialRampToValueAtTime(f1,n+dur);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.001,n+dur);o.connect(g);g.connect(this.ctx.destination);o.start(n);o.stop(n+dur+.02);};
+AP.noise=function(dur,vol,freq){if(!this.initialized)return;const n=this.ctx.currentTime,len=Math.floor(this.ctx.sampleRate*dur),b=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  const s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();s.buffer=b;f.type='lowpass';f.frequency.value=freq;g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.001,n+dur);s.connect(f);f.connect(g);g.connect(this.ctx.destination);s.start(n);};
+AP.playStep=function(run){this.noise(.09,run?.3:.16,run?900:600);};
+AP.playHeartbeat=function(){this.tone('sine',60,35,.18,.5);setTimeout(()=>this.tone('sine',55,32,.2,.4),170);};
+AP.playHurt=function(){this.noise(.25,.5,400);this.tone('sawtooth',160,50,.3,.25);};
+AP.playGrowl=function(){this.tone('sawtooth',70,35,1.2,.3);this.noise(1,.2,300);};
+AP.playBlackout=function(){this.tone('square',120,30,.7,.2);};
+
+/* ---------- Stalker ---------- */
+function buildStalker(){
+  const g=new THREE.Group(),skin=new THREE.MeshStandardMaterial({color:0xb9b2a8,roughness:.95}),gown=new THREE.MeshStandardMaterial({color:0x7d857f,roughness:1}),eye=new THREE.MeshBasicMaterial({color:0xff2200});
+  const add=(geo,m,x,y,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o;};
+  add(new THREE.BoxGeometry(.5,.85,.28),gown,0,1.2,0);
+  const head=add(new THREE.SphereGeometry(.17,12,10),skin,0,1.78,.04);head.scale.y=1.25;
+  add(new THREE.BoxGeometry(.04,.03,.02),eye,-.06,1.8,.2);add(new THREE.BoxGeometry(.04,.03,.02),eye,.06,1.8,.2);
+  const limb=(s,y,len)=>{const a=new THREE.Group();a.position.set(s*(len>.9?.32:.14),y,0);const m=new THREE.Mesh(new THREE.BoxGeometry(.09,len,.09),skin);m.position.y=-len/2;a.add(m);g.add(a);return a;};
+  g.userData={head,arms:[-1,1].map(s=>limb(s,1.58,.95)),legs:[-1,1].map(s=>limb(s,.8,.8))};
+  scene.add(g);const sp=centerOf(9,7);g.position.set(sp.x,0,sp.z);
+  G.stalker={g,hp:100,state:'patrol',path:[],pathT:0,goal:null,stun:0,dead:0,lost:0,wait:20,walk:0};
+}
+function hurt(n){if(G.god)return;G.lastHurt=performance.now();
+  G.health=Math.max(0,G.health-n);G.hurtCD=2.5;audioEngine.playHurt();
+  const f=$id('trauma-flash');f.style.backgroundColor='rgba(160,0,0,.45)';setTimeout(()=>f.style.backgroundColor='rgba(255,255,255,0)',160);
+  if(G.health<=0)die();
+}
+function die(){
+  player.hasWon=true;document.exitPointerLock();$id('hud').classList.add('opacity-0');
+  const t=$id('end-title');t.innerText='YOU DIED';t.classList.remove('text-amber-500');t.classList.add('text-red-700');
+  $id('end-desc').innerText='The hospital keeps what it takes. The files are still out there, and so is it...';$id('end-screen').classList.remove('hidden');
+}
+function hitStalker(dmg,stun,kb){
+  const s=G.stalker,sp=s.g.position;s.hp-=dmg;s.stun=stun;s.state='chase';s.lost=6;
+  const dx=sp.x-camera.position.x,dz=sp.z-camera.position.z,l=Math.hypot(dx,dz)||1,nx=sp.x+dx/l*kb,nz=sp.z+dz/l*kb;if(!solidAt(nx,nz)){sp.x=nx;sp.z=nz;}
+  if(s.hp<=0){s.dead=25;s.g.visible=false;showPrompt('It collapses... but somewhere in the dark, you hear it getting back up.');}
+}
+function updateStalker(dt){
+  const s=G.stalker;if(!s)return;G.hurtCD-=dt;
+  if(s.wait>0){if(G.walked>30)s.wait-=dt;s.g.visible=false;return;}
+  if(s.dead>0){s.dead-=dt;if(s.dead<=0){const far=openCells().filter(([r,c])=>centerOf(r,c).distanceTo(player.position)>20),[r,c]=far[Math.floor(Math.random()*far.length)]||[9,7],q=centerOf(r,c);s.g.position.set(q.x,0,q.z);s.hp=100;s.state='patrol';s.goal=null;s.g.visible=true;}return;}
+  s.g.visible=true;const sp=s.g.position,pp=player.position,dist=Math.hypot(pp.x-sp.x,pp.z-sp.z),seen=dist<16&&los(sp,pp);
+  const heard=!seen&&dist<10&&player.sprinting;
+  if((seen&&(player.flashlightOn||dist<7))||heard||dist<3){if(s.state!=='chase'){s.state='chase';audioEngine.playGrowl();}s.lost=6;}
+  else if(s.state==='chase'){s.lost-=dt;if(s.lost<=0){s.state='patrol';s.goal=null;}}
+  s.pathT-=dt;
+  if(s.pathT<=0){s.pathT=.4;const from=cellOf(sp.x,sp.z);let to;
+    if(s.state==='chase')to=cellOf(pp.x,pp.z);
+    else{if(!s.goal||(from.r===s.goal.r&&from.c===s.goal.c)){const o=openCells(),[r,c]=o[Math.floor(Math.random()*o.length)];s.goal={r,c};}to=s.goal;}
+    s.path=findPath(from,to);}
+  const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);fwd.y=0;fwd.normalize();
+  const dir=new THREE.Vector3(sp.x-pp.x,0,sp.z-pp.z).normalize(),lit=player.flashlightOn&&player.battery>0&&seen&&dist<9&&dir.dot(fwd)>.88;
+  let spd=s.state==='chase'?3.1+.3*player.filesFound:1.3+.15*player.filesFound;if(lit)spd*=.3;if(s.stun>0){s.stun-=dt;spd=0;}
+  let tgt=null;if(s.state==='chase'&&seen&&dist<3.5)tgt=pp;else if(s.path.length>1)tgt=centerOf(s.path[1][0],s.path[1][1]);
+  if(tgt&&spd>0){const dx=tgt.x-sp.x,dz=tgt.z-sp.z,d=Math.hypot(dx,dz)||1,st=Math.min(spd*dt,d),nx=sp.x+dx/d*st,nz=sp.z+dz/d*st;
+    if(!solidAt(nx,nz)){sp.x=nx;sp.z=nz;}else if(!solidAt(nx,sp.z))sp.x=nx;else if(!solidAt(sp.x,nz))sp.z=nz;
+    s.g.rotation.y=Math.atan2(dx,dz);s.walk+=dt*spd*3;}
+  const u=s.g.userData,sw=Math.sin(s.walk);
+  u.legs[0].rotation.x=sw*.6;u.legs[1].rotation.x=-sw*.6;
+  u.arms[0].rotation.x=s.state==='chase'?-1.3+sw*.15:-sw*.4;u.arms[1].rotation.x=s.state==='chase'?-1.3-sw*.15:sw*.4;
+  u.head.rotation.z=Math.sin(performance.now()*.004)*.25+(lit?Math.sin(performance.now()*.05)*.2:0);
+  if(dist<1.1&&G.hurtCD<=0&&s.stun<=0)hurt(12);
+  if(dist<14){G.hb-=dt;if(G.hb<=0){audioEngine.playHeartbeat();G.hb=.35+dist/14*.9;}}
+  if(audioEngine.droneGain)audioEngine.droneGain.gain.value=.1+Math.max(0,1-dist/16)*.25;
+}
+
+/* ---------- Combat (cone + line-of-sight instead of omnidirectional range) ---------- */
+function checkAttackHits(range){
+  const w=player.currentWeapon,fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion),cone=w===3?.985:.62,dmg=[0,12,40,28][w];
+  const test=(pos,y)=>{const p=new THREE.Vector3(pos.x,y,pos.z),d=p.clone().sub(camera.position),dist=d.length();if(dist>range)return-1;d.normalize();if(d.dot(fwd)<cone||!los(camera.position,p))return-1;return dist;};
+  const hits=[];
+  RATS.forEach(r=>{if(r.alive){const d=test(r.group.position,.5);if(d>=0)hits.push({d,rat:r});}});
+  const s=G.stalker;if(s&&s.g.visible&&s.dead<=0){const d=test(s.g.position,1.2);if(d>=0)hits.push({d,st:true});}
+  if(!hits.length)return;
+  const list=w===3?[hits.sort((a,b)=>a.d-b.d)[0]]:hits;
+  list.forEach(h=>{
+    if(h.rat){h.rat.alive=false;h.rat.group.scale.set(1,.1,1);player.ratsKilled++;$id('rat-counter').innerText=`${player.ratsKilled} Killed`;}
+    else hitStalker(dmg,w===3?.6:w===2?1.8:1,w===2?1.6:.6);
+  });
+  const rt=$id('crosshair');rt.classList.add('active');setTimeout(()=>rt.classList.remove('active'),120);
+}
+const _pwa=performWeaponAttack;
+performWeaponAttack=function(){const before=player.ammo;_pwa();if(player.currentWeapon===3&&player.ammo<before){G.muzzle=16;player.rotation.x+=.03;}};
+
+/* ---------- Interaction ---------- */
+function focusTarget(){
+  const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);let best=null,bs=.86;
+  const test=(type,item)=>{if(item.collected)return;const p=item.group.position,d=p.clone().sub(camera.position),dist=d.length();if(dist>3.2)return;d.normalize();const s=d.dot(fwd);if(s>bs&&los(camera.position,p)){bs=s;best={type,item};}};
+  PATIENT_FILES.forEach(f=>test('file',f));WEAPON_PICKUPS.forEach(w=>test('wpn',w));return best;
+}
+function interactOrExamine(){const f=focusTarget();if(!f)return;if(f.type==='file')openPatientFileModal(f.item);else collectWeapon(f.item);}
+function checkInteractions(){
+  if(player.isInspectingFile||player.isMapOpen)return;
+  const f=focusTarget(),pr=$id('action-prompt'),rt=$id('crosshair');
+  if(f){pr.innerText=f.type==='file'?'[E] READ PATIENT RECORD':`[E] PICK UP ${f.item.label}`;pr.classList.remove('hidden');rt.classList.add('active');}
+  else{pr.classList.add('hidden');rt.classList.remove('active');}
+}
+
+/* ---------- Pickups ---------- */
+function spawnPickups(){
+  const free=openCells().filter(([r,c])=>HOSPITAL_GRID[r][c]===0&&!(r<3&&c<3));free.sort(()=>Math.random()-.5);
+  [['bat',6,0x22c55e],['ammo',3,0xf59e0b],['med',3,0xef4444]].forEach(([type,n,col])=>{for(let i=0;i<n;i++){
+    const[r,c]=free.pop(),p=centerOf(r,c),m=new THREE.Mesh(type==='bat'?new THREE.CylinderGeometry(.06,.06,.22,10):new THREE.BoxGeometry(.28,.12,.2),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.7,roughness:.5}));
+    m.position.set(p.x+rnd(-1,1),.3,p.z+rnd(-1,1));scene.add(m);G.pick.push({mesh:m,type,got:false});}});
+}
+function updatePickups(dt,t){
+  G.pick.forEach(k=>{if(k.got)return;k.mesh.rotation.y+=dt*1.5;k.mesh.position.y=.3+Math.sin(t*2+k.mesh.position.x)*.04;
+    const dx=k.mesh.position.x-player.position.x,dz=k.mesh.position.z-player.position.z;
+    if(dx*dx+dz*dz<.8){
+      if(k.type==='med'&&G.health>=100)return;
+      k.got=true;k.mesh.visible=false;audioEngine.playPickupSound();
+      if(k.type==='bat'){player.battery=Math.min(100,player.battery+35);showPrompt('Flashlight battery +35%');}
+      else if(k.type==='ammo'){G.reserve+=6;showPrompt('Handgun ammo +6 (press R to reload)');}
+      else{G.health=Math.min(100,G.health+40);showPrompt('Medical supplies: health +40');}}});
+}
+
+/* ---------- Spatial shifting (two corridors swap) ---------- */
+function updatePsychologicalShifting(dt){
+  const y=player.rotation.y,d=Math.abs(Math.atan2(Math.sin(y-G.lastYaw),Math.cos(y-G.lastYaw)));G.lastYaw=y;
+  G.turn=(G.turn+d)*Math.exp(-dt*1.2);G.shiftCD-=dt;
+  if(G.turn>2.6&&G.shiftCD<=0){
+    const far=SHIFT_CELLS.every(([r,c])=>centerOf(r,c).distanceTo(player.position)>CELL_SIZE*1.8&&(!G.stalker||centerOf(r,c).distanceTo(G.stalker.g.position)>CELL_SIZE*1.5));
+    if(far){G.shift^=1;G.shiftMeshes.forEach((m,i)=>m.visible=(i===G.shift));G.shiftCD=12;G.turn=0;showPrompt('Stone grinds somewhere behind you. The corridors are not where you left them.');}
+  }
+}
+
+/* ---------- Movement ---------- */
+function updatePlayerMovement(dt){
+  if(player.hasWon||player.isInspectingFile||player.isMapOpen)return;
+  const K=KEY_STATES,mv=new THREE.Vector3((K.KeyD?1:0)-(K.KeyA?1:0),0,(K.KeyS?1:0)-(K.KeyW?1:0));
+  player.moving=mv.lengthSq()>0;mv.normalize().applyEuler(new THREE.Euler(0,player.rotation.y,0));
+  const sprint=!!K.ShiftLeft&&player.moving&&!G.tired&&G.stamina>0;player.sprinting=sprint;
+  if(sprint)G.stamina=Math.max(0,G.stamina-22*dt);else G.stamina=Math.min(100,G.stamina+(player.moving?9:16)*dt);
+  if(G.stamina<=0)G.tired=true;if(G.tired&&G.stamina>25)G.tired=false;
+  const speed=(sprint?4.6:2.6)*(G.health<30?.8:1),nx=player.position.x+mv.x*speed*dt,nz=player.position.z+mv.z*speed*dt,R=.32;
+  if(!blocked(nx,player.position.z,R))player.position.x=nx;if(!blocked(player.position.x,nz,R))player.position.z=nz;player.position.y=1.6;
+  G.bob+=dt*(player.moving?(sprint?12:8):0);const sb=Math.sin(G.bob);
+  camera.position.set(player.position.x,1.6+(player.moving?sb*(sprint?.055:.035):0),player.position.z);
+  G.roll+=(((K.KeyA?1:0)-(K.KeyD?1:0))*.03-G.roll)*Math.min(1,dt*8);
+  camera.quaternion.setFromEuler(new THREE.Euler(player.rotation.x,player.rotation.y,G.roll+(player.moving?Math.cos(G.bob*.5)*.008:0),'YXZ'));
+  if(sb<0&&G.prevS>=0&&player.moving)audioEngine.playStep(sprint);G.prevS=sb;
+  const tf=sprint?82:75;if(Math.abs(camera.fov-tf)>.05){camera.fov+=(tf-camera.fov)*Math.min(1,dt*6);camera.updateProjectionMatrix();}
+  flashlight.position.copy(camera.position).add(new THREE.Vector3(.22,-.16,-.1).applyQuaternion(camera.quaternion));
+  const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  G.aim.lerp(camera.position.clone().addScaledVector(fwd,6),1-Math.exp(-14*dt));flashlightTarget.position.copy(G.aim);
+  if(player.flashlightOn&&player.battery>0)player.battery=Math.max(0,player.battery-.33*dt);
+  flashlight.visible=player.flashlightOn&&player.battery>0;
+}
+
+/* ---------- Lights & HUD ---------- */
+function updateLights(dt,t){
+  G.nextBlack-=dt;if(G.nextBlack<=0){G.black=rnd(1.5,3.2);G.nextBlack=rnd(45,80);audioEngine.playBlackout();}
+  if(G.black>0)G.black-=dt;
+  G.fix.forEach(f=>{let on=f.alive&&G.black<=0;if(on&&f.flick)on=Math.sin(t*23+f.phase)*Math.sin(t*7.3+f.phase*1.7)>-.35;f.on=on;f.mat.color.setHex(on?(f.bright?0xe6f5ea:0xffc98a):0x151515);});
+  G.poolT-=dt;
+  if(G.poolT<=0){G.poolT=.15;
+    const near=G.fix.filter(f=>f.alive).sort((a,b)=>a.pos.distanceToSquared(player.position)-b.pos.distanceToSquared(player.position)).slice(0,G.pool.length),keep=new Set(near),free=G.pool.filter(L=>!keep.has(L.userData.f));
+    near.forEach(f=>{if(G.pool.some(L=>L.userData.f===f))return;const L=free.pop();if(!L)return;L.userData.f=f;L.intensity=0;L.position.copy(f.pos);L.color.setHex(f.bright?0xdff2e4:0xffb870);});}
+  G.pool.forEach(L=>{const f=L.userData.f;if(!f)return;const tg=f.on?(f.bright?1.5:.8):0;L.intensity+=(tg-L.intensity)*Math.min(1,dt*20);});
+  let k=1;if(player.battery<20)k=.55+.45*(Math.sin(t*31)*Math.sin(t*13)>-.2?1:.1);
+  G.muzzle=Math.max(0,G.muzzle-dt*40);flashlight.intensity=4.5*k+G.muzzle;
+}
+function updateHud(){
+  const b=Math.round(player.battery),str=`${b}|${Math.round(G.health)}|${Math.round(G.stamina)}|${player.ammo}|${G.reserve}`;
+  if(str===G.hudStr)return;G.hudStr=str;
+  $id('battery-bar').style.width=b+'%';$id('battery-num').innerText=b+'%';
+  $id('hp-bar').style.width=G.health+'%';$id('hp-num').innerText=Math.round(G.health);$id('st-bar').style.width=G.stamina+'%';
+  $id('ammo-count').innerText=`${player.ammo} / 12  +${G.reserve}`;
+  $id('vignette').style.boxShadow=`inset 0 0 ${Math.round(120+(100-G.health)*2.5)}px rgba(${G.health<50?90:0},0,0,0.88)`;
+}
+
+/* ---------- Init wrapper ---------- */
+const _init=init;
+init=function(){
+  try{_init();}catch(err){window.dispatchEvent(new ErrorEvent("error",{message:"init: "+err.message}));}
+  scene.fog=new THREE.FogExp2(0x040608,0.075);scene.background=new THREE.Color(0x040608);
+  ambientLight.intensity=.28;ambientLight.color.setHex(0x2a3440);renderer.toneMappingExposure=1.25;
+  flashlight.angle=Math.PI/6;flashlight.penumbra=.55;G.aim=new THREE.Vector3();
+  for(let i=0;i<5;i++){const L=new THREE.PointLight(0xffffff,0,11,2);scene.add(L);G.pool.push(L);}
+  const d=document.createElement('div');d.className='w-56 bg-black/80 border border-zinc-800 p-2 rounded space-y-1.5';
+  d.innerHTML=`<div class="flex justify-between text-[10px] text-zinc-400 font-bold tracking-wider"><span><i class="fa-solid fa-heart-pulse mr-1 text-red-500"></i>HEALTH</span><span id="hp-num" class="text-red-400">100</span></div><div class="h-1.5 bg-zinc-900 rounded overflow-hidden"><div id="hp-bar" class="h-full bg-red-600" style="width:100%"></div></div><div class="text-[10px] text-zinc-400 font-bold tracking-wider">STAMINA</div><div class="h-1.5 bg-zinc-900 rounded overflow-hidden"><div id="st-bar" class="h-full bg-sky-500" style="width:100%"></div></div>`;
+  $id('battery-bar').closest('.w-56').parentElement.prepend(d);
+  spawnPickups();buildStalker();
+  const pts=[];for(let i=0;i<700;i++)pts.push(rnd(-HALF,HALF),rnd(.3,3),rnd(-HALF,HALF));
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  scene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xaab4a8,size:.03,transparent:true,opacity:.35,depthWrite:false})));
+  document.addEventListener('keydown',e=>{if(e.code==='KeyR'&&player.inventory.gun&&G.reserve>0&&player.ammo<12){const n=Math.min(12-player.ammo,G.reserve);player.ammo+=n;G.reserve-=n;audioEngine.playPickupSound();}});
+};
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+  S(updatePlayerMovement,dt);S(updatePsychologicalShifting,dt);S(updateRats,dt);S(updateStalker,dt);S(updatePickups,dt,t);S(updateLights,dt,t);S(updateHud);S(checkInteractions);
+  PATIENT_FILES.forEach(f=>{if(!f.collected)f.mesh.rotation.y+=dt*.8;});
+  WEAPON_PICKUPS.forEach(w=>{if(!w.collected)w.mesh.rotation.y+=dt*1.2;});
+  renderCustomShaderNoise();renderer.render(scene,camera);
+}
+
+</script>
+<script>
+/* ===== Preview-safe start: pointer-lock fallback + error display ===== */
+window.addEventListener('error',e=>{let b=document.getElementById('err-box');if(!b){b=document.createElement('div');b.id='err-box';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#7f1d1d;color:#fff;font:12px monospace;padding:6px 10px;pointer-events:none';document.body.appendChild(b);}b.textContent='Script error: '+e.message+' (line '+e.lineno+')';});
+(function(){
+  const desc=Object.getOwnPropertyDescriptor(Document.prototype,'pointerLockElement');let fake=false;
+  Object.defineProperty(document,'pointerLockElement',{configurable:true,get:()=>fake?document.body:desc.get.call(document)});
+  const realLocked=()=>desc.get.call(document)===document.body;
+  const startFallback=()=>{
+    if(realLocked()||fake||player.hasWon)return;fake=true;
+    document.getElementById('start-screen').classList.add('hidden');document.getElementById('hud').classList.remove('opacity-0');
+    showPrompt('Mouse capture is blocked here. Hold RIGHT-CLICK and drag (or use arrow keys) to look.');
+  };
+  document.getElementById('start-btn').addEventListener('click',()=>setTimeout(startFallback,400));
+  document.addEventListener('pointerlockerror',startFallback);
+  document.addEventListener('pointerlockchange',()=>{if(realLocked())fake=false;});
+  document.addEventListener('contextmenu',e=>{if(fake)e.preventDefault();});
+  document.addEventListener('mousemove',e=>{
+    if(!fake||!(e.buttons&2)||player.isInspectingFile||player.isMapOpen||player.hasWon)return;
+    player.rotation.y-=e.movementX*.0022;player.rotation.x=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,player.rotation.x-e.movementY*.0022));
+  });
+  let last=performance.now();
+  setInterval(()=>{const n=performance.now(),dt=(n-last)/1000;last=n;
+    return;
+    const K=KEY_STATES;player.rotation.y+=((K.ArrowLeft?1:0)-(K.ArrowRight?1:0))*2.2*dt;
+    player.rotation.x=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,player.rotation.x+((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.6*dt));},16);
+})();
+
+</script>
+<script>
+/* ===== Robust keyboard input + on-screen controls ===== */
+(function(){
+  const KMAP={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',f:'KeyF',e:'KeyE',m:'KeyM',r:'KeyR',arrowleft:'ArrowLeft',arrowright:'ArrowRight',arrowup:'ArrowUp',arrowdown:'ArrowDown'};
+  const norm=e=>(e.code&&e.code!=='Unidentified')?e.code:(KMAP[(e.key||'').toLowerCase()]||null);
+  const GAME_KEYS=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'];
+  const dbg=document.createElement('div');
+  dbg.style.cssText='position:fixed;left:8px;top:8px;z-index:60;font:11px monospace;color:#6ee7b7;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:3px;pointer-events:none;display:none';
+  document.body.appendChild(dbg);
+  const setKey=(c,v)=>{if(c)KEY_STATES[c]=v;};
+  window.addEventListener('keydown',e=>{
+    const c=norm(e);setKey(c,true);if(e.key==='Shift')KEY_STATES.ShiftLeft=true;
+    dbg.textContent='key: '+(c||e.key);window.__keysSeen=true;
+    if(GAME_KEYS.includes(c)&&!document.getElementById('hud').classList.contains('opacity-0'))e.preventDefault();
+  },true);
+  window.addEventListener('keyup',e=>{setKey(norm(e),false);if(e.key==='Shift')KEY_STATES.ShiftLeft=false;},true);
+  window.addEventListener('blur',()=>{for(const k in KEY_STATES)KEY_STATES[k]=false;});
+  document.body.tabIndex=-1;
+  document.getElementById('start-btn').addEventListener('click',()=>{window.focus();document.body.focus();});
+  document.addEventListener('mousedown',()=>{window.focus();});
+
+  /* on-screen pad (shown when mouse capture isn't available) */
+  const pad=document.createElement('div');
+  pad.style.cssText='position:fixed;right:24px;bottom:150px;z-index:25;display:none;grid-template-columns:repeat(3,46px);gap:4px;touch-action:none;user-select:none';
+  const btn=(label,code,col,row)=>{
+    const b=document.createElement('div');b.textContent=label;
+    b.style.cssText=`grid-column:${col};grid-row:${row};height:46px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);border:1px solid #52525b;color:#e4e4e7;font:bold 14px monospace;border-radius:6px;cursor:pointer`;
+    const down=e=>{e.preventDefault();e.stopPropagation();KEY_STATES[code]=true;b.style.background='rgba(127,29,29,.8)';};
+    const up=e=>{e.stopPropagation();KEY_STATES[code]=false;b.style.background='rgba(0,0,0,.65)';};
+    b.addEventListener('pointerdown',down);['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,up));
+    b.addEventListener('mousedown',e=>e.stopPropagation());
+    pad.appendChild(b);
+  };
+  btn('W','KeyW',2,1);btn('A','KeyA',1,2);btn('S','KeyS',2,2);btn('D','KeyD',3,2);btn('RUN','ShiftLeft',1,1);
+  document.body.appendChild(pad);
+  const realLock=Object.getOwnPropertyDescriptor(Document.prototype,'pointerLockElement').get;
+  setInterval(()=>{
+    const playing=!document.getElementById('hud').classList.contains('opacity-0')&&!player.hasWon;
+    const noLock=realLock.call(document)!==document.body;
+    pad.style.display=(playing&&noLock&&!window.__keysSeen)?'grid':'none';dbg.style.display=playing?'block':'none';
+  },400);
+})();
+
+</script>
+<script>
+/* ===== Living map: layout mutates with time & progress; hospital decays as records are found ===== */
+G.mutT=40;G.mutCount=0;G.playT=0;G.wallGeo=null;G.flatGeo=null;
+function ensureWall(r,c){
+  const k=r*N+c;if(r<0||c<0||r>=N||c>=N||HOSPITAL_GRID[r][c]!==1||G.wallMesh[k])return;
+  G.wallGeo=G.wallGeo||new THREE.BoxGeometry(CELL_SIZE,WALL_HEIGHT,CELL_SIZE);
+  const p=centerOf(r,c),set=(r<5&&c<5)?T.wallB:T.wallD,w=new THREE.Mesh(G.wallGeo,set[Math.floor(Math.random()*4)]);
+  w.position.set(p.x,WALL_HEIGHT/2,p.z);w.castShadow=w.receiveShadow=true;scene.add(w);G.wallMesh[k]=w;
+}
+function setCell(r,c,wall){
+  const k=r*N+c,p=centerOf(r,c),bright=r<5&&c<5;HOSPITAL_GRID[r][c]=wall?1:0;
+  if(wall){ensureWall(r,c);G.wallMesh[k].visible=true;}
+  else{
+    if(G.wallMesh[k])G.wallMesh[k].visible=false;
+    if(!G.floorSet.has(k)){G.flatGeo=G.flatGeo||new THREE.PlaneGeometry(CELL_SIZE,CELL_SIZE);
+      const f=new THREE.Mesh(G.flatGeo,bright?T.floorB:T.floorD);f.rotation.x=-Math.PI/2;f.position.set(p.x,0,p.z);f.receiveShadow=true;scene.add(f);
+      const ce=new THREE.Mesh(G.flatGeo,T.ceil);ce.rotation.x=Math.PI/2;ce.position.set(p.x,WALL_HEIGHT,p.z);scene.add(ce);G.floorSet.add(k);}
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>ensureWall(r+a,c+b));
+  }
+  G.fix.forEach(f=>{if(f.r===r&&f.c===c){f.grp.visible=!wall;f.alive=!wall;}});
+  if(!wall&&(r+c)%2===0&&!G.fix.some(f=>f.r===r&&f.c===c))addFixture(r,c,p,bright);
+}
+function connectedAll(){
+  const bak=G.shift;let ok=true;
+  for(const s of[0,1]){G.shift=s;const o=openCells().filter(([r,c])=>!isWall(r,c));if(!o.length)continue;
+    const seen=new Set([o[0][0]*N+o[0][1]]),q=[o[0]];
+    while(q.length){const[r,c]=q.pop();for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const nr=r+a,nc=c+b,k=nr*N+nc;if(isWall(nr,nc)||seen.has(k))continue;seen.add(k);q.push([nr,nc]);}}
+    if(seen.size!==o.length)ok=false;}
+  G.shift=bak;return ok;
+}
+function mutateMap(n){
+  const cand=[];for(let r=1;r<N-1;r++)for(let c=1;c<N-1;c++){if(HOSPITAL_GRID[r][c]>1||(r<3&&c<3)||SHIFT_CELLS.some(s=>s[0]===r&&s[1]===c))continue;cand.push([r,c]);}
+  cand.sort(()=>Math.random()-.5);let done=0;
+  for(const[r,c]of cand){
+    if(done>=n)break;const wall=HOSPITAL_GRID[r][c]===1,p=centerOf(r,c);p.y=1.6;const d=camera.position.distanceTo(p);
+    if(d<9||(d<16&&los(camera.position,p)))continue;
+    if(G.stalker&&centerOf(r,c).distanceTo(G.stalker.g.position)<5)continue;
+    if(!wall&&G.pick.some(k=>{if(k.got)return false;const q=cellOf(k.mesh.position.x,k.mesh.position.z);return q.r===r&&q.c===c;}))continue;
+    setCell(r,c,!wall);
+    if(!wall&&!connectedAll()){setCell(r,c,false);continue;}
+    done++;
+  }
+  if(done){
+    G.mutCount++;audioEngine.tone('sawtooth',55,25,1.4,.3);audioEngine.noise(1.2,.25,200);
+    showPrompt('Walls grind in the distance. The hospital is rearranging itself.');
+    const tag=$id('map-overlay').querySelector('.animate-pulse');if(tag)tag.innerText=`● LAYOUT SHIFTED ${G.mutCount}x — MAP UNRELIABLE`;
+    if(player.isMapOpen)updateBlueprintMapUI();
+    const s=G.stalker;if(s&&solidAt(s.g.position.x,s.g.position.z)){const o=openCells(),[r,c]=o[Math.floor(Math.random()*o.length)],q=centerOf(r,c);s.g.position.set(q.x,0,q.z);}
+  }
+}
+function decay(){
+  const f=player.filesFound;
+  G.fix.forEach(x=>{if(x.bright&&x.alive&&Math.random()<.3)x.alive=false;else if(Math.random()<.3)x.flick=true;});
+  T.wallB.forEach(m=>m.color.setRGB(1-.14*f,1-.24*f,1-.24*f));
+  T.floorB.color.setRGB(1-.14*f,1-.24*f,1-.24*f);
+}
+const _opf=openPatientFileModal;
+openPatientFileModal=function(f){_opf(f);G.mutT=Math.min(G.mutT,4);decay();};
+setInterval(()=>{
+  const playing=!$id('hud').classList.contains('opacity-0')&&!player.hasWon;
+  const hint=$id('focus-hint')||(()=>{const h=document.createElement('div');h.id='focus-hint';h.textContent='Click the game to enable keyboard (WASD)';
+    h.style.cssText='position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:60;background:rgba(0,0,0,.8);color:#fbbf24;font:bold 14px monospace;padding:8px 14px;border:1px solid #92400e;border-radius:4px;pointer-events:none;display:none';document.body.appendChild(h);return h;})();
+  hint.style.display=(playing&&!document.hasFocus())?'block':'none';
+  if(!playing||player.isInspectingFile)return;
+  G.playT+=.25;G.mutT-=.25;
+  if(G.mutT<=0){const f=player.filesFound;mutateMap(2+f*2+Math.floor(G.playT/120));G.mutT=Math.max(15,45-f*8-G.playT/60*2)+rnd(0,8);}
+  if(scene.fog){const tg=.075+.012*player.filesFound+Math.min(.01,G.playT/6000);scene.fog.density+=(tg-scene.fog.density)*.1;}
+},250);
+
+</script>
+<script>
+/* ===== Fair-play pass: stalker sleeps until you explore, gentler damage, regen, Explore Mode (G) ===== */
+G.walked=0;G.god=false;G.lastHurt=0;G.intro=false;
+const _upm=updatePlayerMovement;
+updatePlayerMovement=function(dt){const x=player.position.x,z=player.position.z;_upm(dt);G.walked+=Math.hypot(player.position.x-x,player.position.z-z);};
+document.addEventListener('keydown',e=>{
+  if(e.code==='KeyG'&&!player.hasWon&&!$id('hud').classList.contains('opacity-0')){
+    G.god=!G.god;showPrompt(G.god?'EXPLORE MODE ON: you cannot be hurt. Press [G] to turn it off.':'EXPLORE MODE OFF: the hospital can hurt you again.');}
+});
+setInterval(()=>{
+  const playing=!$id('hud').classList.contains('opacity-0')&&!player.hasWon;if(!playing)return;
+  if(!G.intro){G.intro=true;showPrompt('Take your time. The hunter sleeps until you have explored a while. [G] = Explore Mode (invulnerable).');}
+  if(G.health<100&&performance.now()-G.lastHurt>20000)G.health=Math.min(100,G.health+.125);
+},250);
+
+</script>
+<script>
+/* ===== Keyboard look: Arrow keys or I/J/K/L; X = quick 180 turn ===== */
+(function(){
+  let last=performance.now();
+  const clampP=v=>Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,v));
+  setInterval(()=>{
+    const n=performance.now(),dt=Math.min(.05,(n-last)/1000);last=n;
+    if($id('hud').classList.contains('opacity-0')||player.isInspectingFile||player.isMapOpen||player.hasWon)return;
+    const K=KEY_STATES,turn=((K.ArrowLeft||K.KeyJ)?1:0)-((K.ArrowRight||K.KeyL)?1:0),pitch=((K.ArrowUp||K.KeyI)?1:0)-((K.ArrowDown||K.KeyK)?1:0);
+    player.rotation.y+=turn*2.0*dt;player.rotation.x=clampP(player.rotation.x+pitch*1.4*dt);
+  },16);
+  document.addEventListener('keydown',e=>{
+    if(e.code==='KeyX'&&!e.repeat&&!player.hasWon&&!player.isInspectingFile&&!player.isMapOpen&&!$id('hud').classList.contains('opacity-0'))player.rotation.y+=Math.PI;
+  });
+})();
+
+</script>
+</body>
+</html>
